@@ -782,7 +782,12 @@ int _main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
-int mymain() {
+typedef void (*drawHandler)(int, int);
+
+int mymain(drawHandler h) {
+    if (h != NULL) {
+	h(100,200);
+    } 
     return _main(0, NULL);
 }
 
