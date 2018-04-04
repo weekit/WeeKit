@@ -24,10 +24,10 @@ pub fn set_color(mode: PaintMode, color: &[VGfloat; 4]) {
             4,
             color,
         );
-		match mode {
-			PaintMode::Stroke => vgSetPaint(fill_paint, VGPaintMode::VG_STROKE_PATH as u32),
-			PaintMode::Fill => vgSetPaint(fill_paint, VGPaintMode::VG_FILL_PATH as u32),
-		}
+        match mode {
+            PaintMode::Stroke => vgSetPaint(fill_paint, VGPaintMode::VG_STROKE_PATH as u32),
+            PaintMode::Fill => vgSetPaint(fill_paint, VGPaintMode::VG_FILL_PATH as u32),
+        }
         vgDestroyPaint(fill_paint);
     }
 }
@@ -59,7 +59,7 @@ pub fn draw_rect(x: f32, y: f32, w: f32, h: f32) {
 }
 
 pub fn main(f: extern "C" fn(i32, i32) -> ()) -> i64 {
-	unsafe {
-		return WKMain(f);
-	}
+    unsafe {
+        return WKMain(f);
+    }
 }
