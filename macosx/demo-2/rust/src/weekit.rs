@@ -22,7 +22,7 @@ pub fn set_color(mode: PaintMode, color: &[VGfloat; 4]) {
             fill_paint,
             VGPaintParamType::VG_PAINT_COLOR as i32,
             4,
-            color,
+            color.as_ptr(),
         );
         match mode {
             PaintMode::Stroke => vgSetPaint(fill_paint, VGPaintMode::VG_STROKE_PATH as u32),

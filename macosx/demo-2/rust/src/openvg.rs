@@ -504,27 +504,27 @@ extern "C" {
     /* Getters and Setters */
     pub fn vgSetf(param_type: VGParamType, value: VGfloat);
     pub fn vgSeti(param_type: VGParamType, value: VGint);
-    pub fn vgSetfv(param_type: VGParamType, count: VGint, values: &[VGfloat]);
-    pub fn vgSetiv(param_type: VGParamType, count: VGint, values: &[VGint]);
+    pub fn vgSetfv(param_type: VGParamType, count: VGint, values: *const VGfloat);
+    pub fn vgSetiv(param_type: VGParamType, count: VGint, values: *const VGint);
     pub fn vgGetf(param_type: VGParamType) -> VGfloat;
     pub fn vgGeti(param_type: VGParamType) -> VGint;
     pub fn vgGetVectorSize(param_type: VGParamType) -> VGint;
-    pub fn vgGetfv(param_type: VGParamType, count: VGint, values: [VGfloat]);
-    pub fn vgGetiv(param_type: VGParamType, count: VGint, values: [VGint]);
+    pub fn vgGetfv(param_type: VGParamType, count: VGint, values: *const VGfloat);
+    pub fn vgGetiv(param_type: VGParamType, count: VGint, values: *const VGint);
     pub fn vgSetParameterf(object: VGHandle, paramType: VGint, value: VGfloat);
     pub fn vgSetParameteri(object: VGHandle, paramType: VGint, value: VGint);
-    pub fn vgSetParameterfv(object: VGHandle, paramType: VGint, count: VGint, values: &[VGfloat]);
-    pub fn vgSetParameteriv(object: VGHandle, paramType: VGint, count: VGint, values: &[VGint]);
+    pub fn vgSetParameterfv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGfloat);
+    pub fn vgSetParameteriv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGint);
     pub fn vgGetParameterf(object: VGHandle, paramType: VGint) -> VGfloat;
     pub fn vgGetParameteri(object: VGHandle, paramType: VGint) -> VGint;
     pub fn vgGetParameterVectorSize(object: VGHandle, paramType: VGint) -> VGint;
-    pub fn vgGetParameterfv(object: VGHandle, paramType: VGint, count: VGint, values: &[VGfloat]);
-    pub fn vgGetParameteriv(object: VGHandle, paramType: VGint, count: VGint, values: [VGint]);
+    pub fn vgGetParameterfv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGfloat);
+    pub fn vgGetParameteriv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGint);
     /* Matrix Manipulation */
     pub fn vgLoadIdentity();
-    pub fn vgLoadMatrix(m: &[VGfloat]);
-    pub fn vgGetMatrix(m: &[VGfloat]);
-    pub fn vgMultMatrix(m: &[VGfloat]);
+    pub fn vgLoadMatrix(m:*const VGfloat);
+    pub fn vgGetMatrix(m:*const VGfloat);
+    pub fn vgMultMatrix(m:*const VGfloat);
     pub fn vgTranslate(tx: VGfloat, ty: VGfloat);
     pub fn vgScale(sx: VGfloat, sy: VGfloat);
     pub fn vgShear(shx: VGfloat, shy: VGfloat);
@@ -577,14 +577,14 @@ extern "C" {
     pub fn vgAppendPathData(
         dstPath: VGPath,
         numSegments: VGint,
-        pathSegmemts: &[VGubyte],
-        pathData: &[VGbyte],
+        pathSegmemts: *const VGubyte,
+        pathData:*const VGbyte,
     );
     pub fn vgModifyPathCoords(
         dstPath: VGPath,
         startIndex: VGint,
         numSegments: VGint,
-        pathData: &[VGbyte],
+        pathData:*const VGbyte,
     );
     pub fn vgTransformPath(dstPath: VGPath, srcPath: VGPath);
     pub fn vgInterpolatePath(
@@ -599,24 +599,24 @@ extern "C" {
         startSegment: VGint,
         numSegments: VGint,
         distance: VGint,
-        x: &[VGfloat],
-        y: &[VGfloat],
-        tangentX: &[VGfloat],
-        tangentY: &[VGfloat],
+        x:*const VGfloat,
+        y:*const VGfloat,
+        tangentX:*const VGfloat,
+        tangentY:*const VGfloat,
     );
     pub fn vgPathBounds(
         path: VGPath,
-        minX: &[VGfloat],
-        minY: &[VGfloat],
-        width: &[VGfloat],
-        height: &[VGfloat],
+        minX:*const VGfloat,
+        minY:*const VGfloat,
+        width:*const VGfloat,
+        height:*const VGfloat,
     );
     pub fn vgPathTransformedBounds(
         path: VGPath,
-        minX: &[VGfloat],
-        minY: &[VGfloat],
-        width: &[VGfloat],
-        height: &[VGfloat],
+        minX:*const VGfloat,
+        minY:*const VGfloat,
+        width:*const VGfloat,
+        height:*const VGfloat,
     );
     pub fn vgDrawPath(path: VGPath, paintModes: VGbitfield);
     /* Paint */
@@ -638,7 +638,7 @@ extern "C" {
     pub fn vgClearImage(image: VGImage, x: VGint, y: VGint, width: VGint, height: VGint);
     pub fn vgImageSubData(
         image: VGImage,
-        data: &[VGbyte],
+        data:*const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         x: VGint,
@@ -648,7 +648,7 @@ extern "C" {
     );
     pub fn vgGetImageSubData(
         image: VGImage,
-        data: &[VGbyte],
+        data:*const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         x: VGint,
@@ -686,7 +686,7 @@ extern "C" {
         height: VGint,
     );
     pub fn vgWritePixels(
-        data: &[VGbyte],
+        data:*const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         dx: VGint,
@@ -704,7 +704,7 @@ extern "C" {
         height: VGint,
     );
     pub fn vgReadPixels(
-        data: &[VGbyte],
+        data:*const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         sx: VGint,
@@ -741,14 +741,14 @@ extern "C" {
     pub fn vgDrawGlyphs(
         font: VGFont,
         glyphCount: VGint,
-        glyphIndices: &[VGfloat],
-        adjustments_x: &[VGfloat],
-        adjustments_y: &[VGfloat],
+        glyphIndices:*const VGfloat,
+        adjustments_x:*const VGfloat,
+        adjustments_y:*const VGfloat,
         paintModes: VGbitfield,
         allowAutoHinting: VGboolean,
     );
     /* Image Filters */
-    pub fn vgColorMatrix(dst: VGImage, src: VGImage, matrix: &[VGfloat]);
+    pub fn vgColorMatrix(dst: VGImage, src: VGImage, matrix:*const VGfloat);
     pub fn vgConvolve(
         dst: VGImage,
         src: VGImage,
@@ -756,7 +756,7 @@ extern "C" {
         kernelHeight: VGint,
         shiftX: VGint,
         shiftY: VGint,
-        kernel: [VGshort],
+        kernel: *const VGshort,
         scale: VGfloat,
         bias: VGfloat,
         tilingMode: VGTilingMode,
@@ -768,8 +768,8 @@ extern "C" {
         kernelHeight: VGint,
         shiftX: VGint,
         shiftY: VGint,
-        kernelX: [VGshort],
-        kernelY: [VGshort],
+        kernelX: *const VGshort,
+        kernelY: *const VGshort,
         scale: VGfloat,
         bias: VGfloat,
         tilingMode: VGfloat,
@@ -784,17 +784,17 @@ extern "C" {
     pub fn vgLookup(
         dst: VGImage,
         src: VGImage,
-        redLUT: [VGuint],
-        greenLUT: [VGuint],
-        blueLUT: [VGuint],
-        alphaLUT: [VGuint],
+        redLUT: *const VGuint,
+        greenLUT: *const VGuint,
+        blueLUT: *const VGuint,
+        alphaLUT: *const VGuint,
         outputLinear: VGboolean,
         outputPremultiplied: VGboolean,
     );
     pub fn vgLookupSingle(
         dst: VGImage,
         src: VGImage,
-        lookupTable: [VGuint],
+        lookupTable: *const VGuint,
         sourceChannel: VGImageChannel,
         outputLinear: VGboolean,
         outputPremultiplied: VGboolean,
@@ -802,7 +802,7 @@ extern "C" {
     /* Hardware Queries */
     pub fn vgHardwareQuery(key: VGHardwareQueryType, setting: VGint) -> VGHardwareQueryResult;
     /* Renderer and Extension Information */
-    pub fn vgGetString(name: VGStringID) -> [VGubyte];
+    pub fn vgGetString(name: VGStringID) -> *const VGubyte;
     // vgu.h
     pub fn vguLine(
         path: VGPath,
@@ -813,7 +813,7 @@ extern "C" {
     ) -> VGUErrorCode;
     pub fn vguPolygon(
         path: VGPath,
-        points: &[VGfloat],
+        points:*const VGfloat,
         count: VGfloat,
         closed: VGboolean,
     ) -> VGUErrorCode;
@@ -859,7 +859,7 @@ extern "C" {
         sy2: VGfloat,
         sx3: VGfloat,
         sy3: VGfloat,
-        matrix: &[VGfloat],
+        matrix: *const VGfloat,
     ) -> VGUErrorCode;
     pub fn vguComputeWarpSquareToQuad(
         dx0: VGfloat,
@@ -870,7 +870,7 @@ extern "C" {
         dy2: VGfloat,
         dx3: VGfloat,
         dy3: VGfloat,
-        matrix: &[VGfloat],
+        matrix: *const VGfloat,
     ) -> VGUErrorCode;
     pub fn vguComputeWarpQuadToQuad(
         dx0: VGfloat,
@@ -889,6 +889,6 @@ extern "C" {
         sy2: VGfloat,
         sx3: VGfloat,
         sy3: VGfloat,
-        matrix: &[VGfloat],
+        matrix: *const VGfloat,
     ) -> VGUErrorCode;
 }
