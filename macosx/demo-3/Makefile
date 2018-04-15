@@ -12,8 +12,10 @@ all:
 	clang src/*.m src/*.c \
 		-g \
 		-I ${SDK}/include \
+		-I /usr/local/include \
 		-L ${SDK}/lib/macosx/ub/gle/standalone \
 		-lAmanithVG \
+		-L /usr/local/lib \
 		-I src \
 		-lobjc \
 		-framework Cocoa \
