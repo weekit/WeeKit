@@ -16,8 +16,29 @@
 #include "DejaVuSans.inc"				   // font data
 #include "DejaVuSerif.inc"
 #include "DejaVuSansMono.inc"
-#include "eglstate.h"					   // data structures for graphics state
-#include "fontinfo.h"					   // font data structure
+
+typedef struct {
+	// Screen dimentions
+	uint32_t screen_width;
+	uint32_t screen_height;
+	// Window dimentions
+	int32_t window_x;
+	int32_t window_y;
+	uint32_t window_width;
+	uint32_t window_height;
+} STATE_T;
+
+typedef struct {
+	const short *CharacterMap;
+	const int *GlyphAdvances;
+	int Count;
+	int descender_height;
+	int font_height;
+	VGPath Glyphs[500];
+} Fontinfo;
+
+extern Fontinfo *SansTypeface, *SerifTypeface, *MonoTypeface;
+
 
 static STATE_T _state, *state = &_state;	// global graphics state
 static const int MAXFONTPATH = 500;
