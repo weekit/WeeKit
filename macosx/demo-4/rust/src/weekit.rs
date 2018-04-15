@@ -2,6 +2,9 @@
 
 extern crate libc;
 use std;
+use std::iter::FromIterator;
+
+
 
 use openvg::*;
 
@@ -9,8 +12,10 @@ type Fontinfo = [u8; 2032];
 
 #[link(name = "wee")]
 extern "C" {
+    // platform-dependent
     fn WKMain(f: extern "C" fn(i32, i32) -> ()) -> i64;
 
+    // libshapes
     static SansTypeface: *const Fontinfo;
     static SerifTypeface: *const Fontinfo;
     static MonoTypeface: *const Fontinfo;
@@ -86,22 +91,36 @@ pub fn main(f: extern "C" fn(i32, i32) -> ()) -> i64 {
 
 pub fn demo(width : u32, height : u32) {
     println!("{} {}", width, height);
-    let c_str = std::ffi::CString::new("hello, world").unwrap();
-    let c_ptr = c_str.as_ptr();
+    let str_0 = "hello, world";
+    let c_str_0 = std::ffi::CString::new(str_0).unwrap();
+    let c_ptr_0 = c_str_0.as_ptr();
+
+    let vec_1 = vec!['H','é','j',',',' ','v', 'ä', 'r' , 'l','d' ,'e','n'];
+    let str_1 = String::from_iter(vec_1);
+    let c_str_1 = std::ffi::CString::new(str_1).unwrap();
+    let c_ptr_1 = c_str_1.as_ptr();
+
+    let str_2 = "Helló Világ";
+    let c_str_2 = std::ffi::CString::new(str_2).unwrap();
+    let c_ptr_2 = c_str_2.as_ptr();
+
+    let str_3 = "Ahoj světe";
+    let c_str_3 = std::ffi::CString::new(str_3).unwrap();
+    let c_ptr_3 = c_str_3.as_ptr();
+
     unsafe {
         init(width, height);                              // Start the picture
         Start(width, height);                              // Start the picture
-        Background(255, 0, 0);                               // Black background
+        Background(0, 0, 0);                               // Black background
         Fill(44, 77, 232, 1.0);                              // Big blue marble
         Circle(width as f32 / 2.0, 0 as f32, width as f32);                       // The "world"
         Fill(255, 255, 255, 1.0);                            // White text
 
-        puts(c_ptr);
-        TextMid(width as f32 / 2.0, 
-                height as f32 * 0.7, 
-                c_ptr,
-                SerifTypeface, 
-                width/15);
+        TextMid(width as f32 / 2.0, height as f32 * 0.7, c_ptr_0, SerifTypeface, width/15);
+        TextMid(width as f32 / 2.0, height as f32 * 0.5, c_ptr_1, SerifTypeface, width/15);
+        TextMid(width as f32 / 2.0, height as f32 * 0.3, c_ptr_2, SerifTypeface, width/15);
+        TextMid(width as f32 / 2.0, height as f32 * 0.1, c_ptr_3, SerifTypeface, width/15);
+
 	finish();
     }
 }

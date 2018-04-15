@@ -461,8 +461,6 @@ unsigned char *next_utf8_char(unsigned char *utf8, int *codepoint) {
 // Text renders a string of text at a specified location, size, using the specified font glyphs
 // derived from http://web.archive.org/web/20070808195131/http://developer.hybrid.fi/font2openvg/renderFont.cpp.txt
 void Text(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
-	Stroke(255, 0, 255, 1.0);
-	Fill(255, 255, 0, 1.0);
 	VGfloat size = (VGfloat) pointsize, xx = x, mm[9];
 	vgGetMatrix(mm);
 	int character;

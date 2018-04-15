@@ -360,7 +360,7 @@ VGboolean done;
     // there is no autorelease pool when this method is called because it will be called from a background thread
     // it's important to create one or app can leak objects
     @autoreleasepool {
-      //  [self drawRect:[self bounds]];
+        [self drawRect:[self bounds]];
     }
 
     return kCVReturnSuccess;
