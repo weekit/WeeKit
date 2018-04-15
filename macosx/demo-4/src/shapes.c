@@ -305,11 +305,12 @@ void init(int w, int h) {
 
 // finish cleans up
 void finish() {
-  if (0) {
-    unloadfont(SansTypeface->Glyphs, SansTypeface->Count);
-    unloadfont(SerifTypeface->Glyphs, SerifTypeface->Count);
-    unloadfont(MonoTypeface->Glyphs, MonoTypeface->Count);
-  }
+  unloadfont(SansTypeface->Glyphs, SansTypeface->Count);
+  unloadfont(SerifTypeface->Glyphs, SerifTypeface->Count);
+  unloadfont(MonoTypeface->Glyphs, MonoTypeface->Count);
+  SansTypeface = NULL;
+  SerifTypeface = NULL;
+  MonoTypeface = NULL;
 }
 
 //

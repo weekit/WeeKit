@@ -36,5 +36,5 @@ all:
 	install_name_tool -add_rpath "@executable_path/../dylibs" Demo.app/Contents/MacOS/Demo
 
 clean:
-	rm -rf Demo.app
+	rm -rf Demo.app *.dSYM
 	cd rust; cargo clean

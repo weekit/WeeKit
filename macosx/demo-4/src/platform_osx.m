@@ -28,7 +28,7 @@
 typedef void (*WKDrawHandler)(int, int);
 
 // Handler pointers
-WKDrawHandler wkDraw;;
+WKDrawHandler wkDrawHandler;
 
 
 // default window dimensions
@@ -485,7 +485,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     CGLLockContext([[self openGLContext] CGLContextObj]);
 
     // draw OpenVG content
-    wkDraw([self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet]);
+    wkDrawHandler([self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet]);
 
 #ifdef AM_SRE
     // blit AmanithVG SRE drawing surface, using a texture
@@ -782,8 +782,7 @@ int _main(int argc, char *argv[]) {
 
 
 int WKMain(WKDrawHandler h) {
-  wkDraw = h;
-  printf("VGHandle %lu\n", sizeof(VGHandle));
+  wkDrawHandler = h;
   return _main(0, NULL);
 }
 

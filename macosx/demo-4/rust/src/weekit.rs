@@ -90,7 +90,6 @@ pub fn main(f: extern "C" fn(i32, i32) -> ()) -> i64 {
 }
 
 pub fn demo(width : u32, height : u32) {
-    println!("{} {}", width, height);
     let str_0 = "hello, world";
     let c_str_0 = std::ffi::CString::new(str_0).unwrap();
     let c_ptr_0 = c_str_0.as_ptr();
