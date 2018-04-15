@@ -13,6 +13,8 @@ all:
 		-g \
 		-I ${SDK}/include \
 		-L ${SDK}/lib/macosx/ub/gle/standalone \
+		-I /usr/local/include \
+		-L /usr/local/lib \
 		-lAmanithVG \
 		-I src \
 		-lobjc \

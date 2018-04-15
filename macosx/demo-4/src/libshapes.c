@@ -58,10 +58,14 @@ void restoreterm() {
 
 // loadfont loads font path data
 // derived from http://web.archive.org/web/20070808195131/http://developer.hybrid.fi/font2openvg/renderFont.cpp.txt
-Fontinfo loadfont(const int *Points,
+Fontinfo loadfont(const float *Points,
 		  const int *PointIndices,
 		  const unsigned char *Instructions,
-		  const int *InstructionIndices, const int *InstructionCounts, const int *adv, const short *cmap, int ng) {
+		  const int *InstructionIndices, 
+		  const int *InstructionCounts, 
+		  const int *adv, 
+		  const short *cmap, 
+		  int ng) {
 
 	Fontinfo f;
 	int i;
@@ -71,8 +75,8 @@ Fontinfo loadfont(const int *Points,
 		return f;
 	}
 	for (i = 0; i < ng; i++) {
-		const int *p = &Points[PointIndices[i] * 2];
-		unsigned char *instructions = &Instructions[InstructionIndices[i]];
+		const float *p = &Points[PointIndices[i] * 2];
+		const unsigned char *instructions = &Instructions[InstructionIndices[i]];
 		int ic = InstructionCounts[i];
 		VGPath path = vgCreatePath(VG_PATH_FORMAT_STANDARD, VG_PATH_DATATYPE_F,
 					   1.0/65536.0f, 0.0f, 0, 0,
