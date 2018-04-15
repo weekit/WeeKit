@@ -10,7 +10,7 @@ extern "C" fn draw_handler(_x: i32, _y: i32) {
     draw_rect(0.0, 0.0, 10.0, 10.0);
     set_color(PaintMode::Fill, &[0.0, 0.0, 1.0, 1.0]);
     set_color(PaintMode::Stroke, &[1.0, 0.0, 1.0, 1.0]);
-    draw_rect(20., 20., 20., 20.);
+    draw_rect(20., 20., 200., 200.);
 }
 
 fn main() {

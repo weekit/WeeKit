@@ -68,19 +68,23 @@ Fontinfo loadfont(const int *Points,
 
 	memset(f.Glyphs, 0, MAXFONTPATH * sizeof(VGPath));
 	if (ng > MAXFONTPATH) {
-printf("OOPS\n");
 		return f;
 	}
 	for (i = 0; i < ng; i++) {
 		const int *p = &Points[PointIndices[i] * 2];
-		const unsigned char *instructions = &Instructions[InstructionIndices[i]];
+		unsigned char *instructions = &Instructions[InstructionIndices[i]];
 		int ic = InstructionCounts[i];
-		VGPath path = vgCreatePath(VG_PATH_FORMAT_STANDARD, VG_PATH_DATATYPE_S_32,
-					   1.0f / 65536.0f, 0.0f, 0, 0,
+		VGPath path = vgCreatePath(VG_PATH_FORMAT_STANDARD, VG_PATH_DATATYPE_F,
+					   1.0/65536.0f, 0.0f, 0, 0,
 					   VG_PATH_CAPABILITY_ALL);
 		f.Glyphs[i] = path;
 		if (ic) {
 			vgAppendPathData(path, ic, instructions, p);
+			VGErrorCode err = vgGetError();
+			if (err != VG_NO_ERROR) {
+				printf("error %d\n", err);
+				exit(-1);
+			}
 		}
 	}
 	f.CharacterMap = cmap;
@@ -221,7 +225,8 @@ void dumpscreen(int w, int h, FILE * fp) {
 	free(ScreenBuffer);
 }
 
-Fontinfo SansTypeface, SerifTypeface, MonoTypeface;
+Fontinfo _SansTypeface, _SerifTypeface, _MonoTypeface;
+Fontinfo *SansTypeface = NULL, *SerifTypeface = NULL, *MonoTypeface = NULL;
 
 // initWindowSize requests a specific window size & position, if not called
 // then init() will open a full screen window.
@@ -235,48 +240,51 @@ void initWindowSize(int x, int y, unsigned int w, unsigned int h) {
 
 // init sets the system to its initial state
 void init(int w, int h) {
-printf("size of int = %d\n", sizeof(int));
 	memset(state, 0, sizeof(*state));
 	state->window_x = init_x = 0;
 	state->window_y = init_y = 0;
 	state->window_width = init_w = w;
 	state->window_height = init_h = h;
-	SansTypeface = loadfont(DejaVuSans_glyphPoints,
+if (SansTypeface == NULL) {
+	SansTypeface = &_SansTypeface; // (Fontinfo *)malloc(sizeof(Fontinfo));
+	_SansTypeface = loadfont(DejaVuSans_glyphPoints,
 				DejaVuSans_glyphPointIndices,
 				DejaVuSans_glyphInstructions,
 				DejaVuSans_glyphInstructionIndices,
 				DejaVuSans_glyphInstructionCounts,
 				DejaVuSans_glyphAdvances, DejaVuSans_characterMap, DejaVuSans_glyphCount);
-printf("size of SansTypeface = %d\n", sizeof(SansTypeface));
-	SansTypeface.descender_height = DejaVuSans_descender_height;
-	SansTypeface.font_height = DejaVuSans_font_height;
+	SansTypeface->descender_height = DejaVuSans_descender_height;
+	SansTypeface->font_height = DejaVuSans_font_height;
 
-	SerifTypeface = loadfont(DejaVuSerif_glyphPoints,
+	SerifTypeface = &_SerifTypeface; //(Fontinfo *)malloc(sizeof(Fontinfo));
+	_SerifTypeface = loadfont(DejaVuSerif_glyphPoints,
 				 DejaVuSerif_glyphPointIndices,
 				 DejaVuSerif_glyphInstructions,
 				 DejaVuSerif_glyphInstructionIndices,
 				 DejaVuSerif_glyphInstructionCounts,
 				 DejaVuSerif_glyphAdvances, DejaVuSerif_characterMap, DejaVuSerif_glyphCount);
-	SerifTypeface.descender_height = DejaVuSerif_descender_height;
-	SerifTypeface.font_height = DejaVuSerif_font_height;
-printf("size of SerifTypeface = %d\n", sizeof(SerifTypeface));
+	SerifTypeface->descender_height = DejaVuSerif_descender_height;
+	SerifTypeface->font_height = DejaVuSerif_font_height;
 
-	MonoTypeface = loadfont(DejaVuSansMono_glyphPoints,
+	MonoTypeface = &_MonoTypeface; //(Fontinfo *)malloc(sizeof(Fontinfo));
+	_MonoTypeface = loadfont(DejaVuSansMono_glyphPoints,
 				DejaVuSansMono_glyphPointIndices,
 				DejaVuSansMono_glyphInstructions,
 				DejaVuSansMono_glyphInstructionIndices,
 				DejaVuSansMono_glyphInstructionCounts,
 				DejaVuSansMono_glyphAdvances, DejaVuSansMono_characterMap, DejaVuSansMono_glyphCount);
-	MonoTypeface.descender_height = DejaVuSansMono_descender_height;
-	MonoTypeface.font_height = DejaVuSansMono_font_height;
-printf("size of MonoTypeface = %d\n", sizeof(MonoTypeface));
+	MonoTypeface->descender_height = DejaVuSansMono_descender_height;
+	MonoTypeface->font_height = DejaVuSansMono_font_height;
+}
 }
 
 // finish cleans up
 void finish() {
-	unloadfont(SansTypeface.Glyphs, SansTypeface.Count);
-	unloadfont(SerifTypeface.Glyphs, SerifTypeface.Count);
-	unloadfont(MonoTypeface.Glyphs, MonoTypeface.Count);
+if (0) {
+	unloadfont(SansTypeface->Glyphs, SansTypeface->Count);
+	unloadfont(SerifTypeface->Glyphs, SerifTypeface->Count);
+	unloadfont(MonoTypeface->Glyphs, MonoTypeface->Count);
+}
 }
 
 //
@@ -445,17 +453,18 @@ unsigned char *next_utf8_char(unsigned char *utf8, int *codepoint) {
 	return p;
 }
 
+
 // Text renders a string of text at a specified location, size, using the specified font glyphs
 // derived from http://web.archive.org/web/20070808195131/http://developer.hybrid.fi/font2openvg/renderFont.cpp.txt
-void Text(VGfloat x, VGfloat y, const char *s, Fontinfo f, int pointsize) {
+void Text(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
+	Stroke(255, 0, 255, 1.0);
+	Fill(255, 255, 0, 1.0);
 	VGfloat size = (VGfloat) pointsize, xx = x, mm[9];
-printf("size = %d\n", size);
 	vgGetMatrix(mm);
 	int character;
 	unsigned char *ss = (unsigned char *)s;
 	while ((ss = next_utf8_char(ss, &character)) != NULL) {
-printf("char = %c\n", character);
-		int glyph = f.CharacterMap[character];
+		int glyph = f->CharacterMap[character];
 		if (glyph == -1) {
 			continue;			   //glyph is undefined
 		}
@@ -466,50 +475,53 @@ printf("char = %c\n", character);
 		};
 		vgLoadMatrix(mm);
 		vgMultMatrix(mat);
-		vgDrawPath(f.Glyphs[glyph], VG_FILL_PATH);
-		xx += size * f.GlyphAdvances[glyph] / 65536.0f;
+		vgDrawPath(f->Glyphs[glyph], VG_STROKE_PATH|VG_FILL_PATH);
+			VGErrorCode err = vgGetError();
+			if (err != VG_NO_ERROR) {
+				printf("error %d\n", err);
+				exit(-1);
+			}
+		xx += size * f->GlyphAdvances[glyph] / 65536.0f;
 	}
 	vgLoadMatrix(mm);
 }
 
 // TextWidth returns the width of a text string at the specified font and size.
-VGfloat TextWidth(const char *s, Fontinfo f, int pointsize) {
+VGfloat TextWidth(const char *s, Fontinfo *f, int pointsize) {
 	VGfloat tw = 0.0;
 	VGfloat size = (VGfloat) pointsize;
 	int character;
 	unsigned char *ss = (unsigned char *)s;
 	while ((ss = next_utf8_char(ss, &character)) != NULL) {
-		int glyph = f.CharacterMap[character];
+		int glyph = f->CharacterMap[character];
 		if (glyph == -1) {
 			continue;			   //glyph is undefined
 		}
-		tw += size * f.GlyphAdvances[glyph] / 65536.0f;
+		tw += size * f->GlyphAdvances[glyph] / 65536.0f;
 	}
 	return tw;
 }
 
 // TextMid draws text, centered on (x,y)
-void TextMid(VGfloat x, VGfloat y, const char *s, Fontinfo f, int pointsize) {
+void TextMid(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
 	VGfloat tw = TextWidth(s, f, pointsize);
-printf("tw = %f\n", tw);
-printf("pointsize = %d\n", pointsize);
 	Text(x - (tw / 2.0), y, s, f, pointsize);
 }
 
 // TextEnd draws text, with its end aligned to (x,y)
-void TextEnd(VGfloat x, VGfloat y, const char *s, Fontinfo f, int pointsize) {
+void TextEnd(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
 	VGfloat tw = TextWidth(s, f, pointsize);
 	Text(x - tw, y, s, f, pointsize);
 }
 
 // TextHeight reports a font's height
-VGfloat TextHeight(Fontinfo f, int pointsize) {
-	return (f.font_height * pointsize) / 65536;
+VGfloat TextHeight(Fontinfo *f, int pointsize) {
+	return (f->font_height * pointsize) / 65536;
 }
 
 // TextDepth reports a font's depth (how far under the baseline it goes)
-VGfloat TextDepth(Fontinfo f, int pointsize) {
-	return (-f.descender_height * pointsize) / 65536;
+VGfloat TextDepth(Fontinfo *f, int pointsize) {
+	return (-f->descender_height * pointsize) / 65536;
 }
 
 //

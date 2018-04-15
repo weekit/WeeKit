@@ -19,8 +19,10 @@
 #include <OpenGL/gl.h>
 #include <time.h>
 #include <sys/time.h>
-#include "tutorial_09.h"
 
+#include <VG/openvg.h>
+#include <VG/vgu.h>
+#include <VG/vgext.h>
 
 // WeeKit handler functions
 typedef void (*WKDrawHandler)(int, int);
@@ -30,8 +32,8 @@ WKDrawHandler wkDraw;;
 
 
 // default window dimensions
-#define INITIAL_WINDOW_WIDTH 512
-#define INITIAL_WINDOW_HEIGHT 512
+#define INITIAL_WINDOW_WIDTH 800
+#define INITIAL_WINDOW_HEIGHT 480
 #define WINDOW_TITLE "AmanithVG Tutorial 09 - Press F1 for help"
 
 // The 10.12 SDK adds new symbols and immediately deprecates the old ones
@@ -358,7 +360,7 @@ VGboolean done;
     // there is no autorelease pool when this method is called because it will be called from a background thread
     // it's important to create one or app can leak objects
     @autoreleasepool {
-        [self drawRect:[self bounds]];
+      //  [self drawRect:[self bounds]];
     }
 
     return kCVReturnSuccess;
@@ -451,9 +453,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
         exit(EXIT_FAILURE);
     }
 
-    // init tutorial application (OpenVG related code)
-    tutorialInit([self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet]);
-
     // create a display link capable of being used with all active displays
     CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
     
@@ -486,8 +485,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
         CGLLockContext([[self openGLContext] CGLContextObj]);
 
         // draw OpenVG content
-        tutorialDraw([self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet]);
-
         wkDraw([self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet]);
 
     #ifdef AM_SRE
@@ -530,7 +527,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
         vgPrivSurfaceResizeMZT(vgWindowSurface, (VGint)bound.width, (VGint)bound.height);
         VGint surfaceWidth = [self openvgSurfaceWidthGet];
         VGint surfaceHeight = [self openvgSurfaceHeightGet];
-        tutorialResize(surfaceWidth, surfaceHeight);
 
     #ifdef AM_SRE
         // resize OpenGL viewport
@@ -555,9 +551,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // release the display link
     CVDisplayLinkRelease(displayLink);
 
-    // destroy OpenVG resources created by the tutorial
-    tutorialDestroy();
-
 #ifdef AM_SRE
     // destroy texture used to blit AmanithVG SRE surface
     [self blitTextureDestroy];
@@ -576,7 +569,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // convert window location into view location
     p = [theEvent locationInWindow];
     p = [self convertPoint: p fromView: nil];
-    mouseLeftButtonDown(p.x, p.y);
 }
 
 - (void) mouseUp: (NSEvent *)theEvent {
@@ -586,7 +578,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // convert window location into view location
     p = [theEvent locationInWindow];
     p = [self convertPoint: p fromView: nil];
-    mouseLeftButtonUp(p.x, p.y);
 }
 
 - (void) mouseDragged:(NSEvent *)theEvent {
@@ -596,7 +587,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // convert window location into view location
     p = [theEvent locationInWindow];
     p = [self convertPoint: p fromView: nil];
-    mouseMove(p.x, p.y);
 }
 
 - (void) rightMouseDown: (NSEvent *)theEvent {
@@ -606,7 +596,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // convert window location into view location
     p = [theEvent locationInWindow];
     p = [self convertPoint: p fromView: nil];
-    mouseRightButtonDown(p.x, p.y);
 }
 
 - (void) rightMouseUp: (NSEvent *)theEvent {
@@ -616,7 +605,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // convert window location into view location
     p = [theEvent locationInWindow];
     p = [self convertPoint: p fromView: nil];
-    mouseRightButtonUp(p.x, p.y);
 }
 
 - (void) rightMouseDragged:(NSEvent *)theEvent {
@@ -626,7 +614,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // convert window location into view location
     p = [theEvent locationInWindow];
     p = [self convertPoint: p fromView: nil];
-    mouseMove(p.x, p.y);
 }
 
 - (void) keyDown:(NSEvent *)theEvent {

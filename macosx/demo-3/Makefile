@@ -10,6 +10,7 @@ all:
 	cp resources/tutorial.icns Demo.app/Contents/Resources
 	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib Demo.app/Contents/dylibs
 	clang src/*.m src/*.c \
+		-g \
 		-I ${SDK}/include \
 		-L ${SDK}/lib/macosx/ub/gle/standalone \
 		-lAmanithVG \
