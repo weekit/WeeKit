@@ -65,6 +65,14 @@ pub fn main(f: extern "C" fn(i32, i32) -> ()) -> i64 {
 }
 
 pub fn demo(width: u32, height: u32) {
+    let screen = Screen::new(width, height);
+    screen.clear(0, 0, 0);
+	
+    fill(44, 77, 232, 1.0); // Big blue marble
+    circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"
+
+    fill(255, 255, 255, 1.0); // White text
+	
     let str_0 = "hello, world";
     let c_str_0 = std::ffi::CString::new(str_0).unwrap();
     let c_ptr_0 = c_str_0.as_ptr();
@@ -81,15 +89,7 @@ pub fn demo(width: u32, height: u32) {
     let str_3 = "Ahoj světe";
     let c_str_3 = std::ffi::CString::new(str_3).unwrap();
     let c_ptr_3 = c_str_3.as_ptr();
-
-    unsafe {
-        let screen = Screen::new(width, height);
-        screen.clear(0, 0, 0);
-
-        fill(44, 77, 232, 1.0); // Big blue marble
-        circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"
-
-        fill(255, 255, 255, 1.0); // White text
+	unsafe {		
         TextMid(
             width as f32 / 2.0,
             height as f32 * 0.7,
