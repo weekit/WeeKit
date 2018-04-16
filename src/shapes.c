@@ -19,17 +19,13 @@
 #include "DejaVuSansMono.inc"
 
 typedef struct {
-  const short *CharacterMap;
-  const int *GlyphAdvances;
-  int Count;
+  const short *character_map;
+  const int *glyph_advances;
+  int glyph_count;
   int descender_height;
   int font_height;
-  VGPath Glyphs[500];
+  VGPath glyphs[500];
 } Fontinfo;
-
-extern Fontinfo *SansTypeface, *SerifTypeface, *MonoTypeface;
-
-static const int MAXFONTPATH = 500;
 
 //
 // Terminal settings
@@ -69,27 +65,28 @@ Fontinfo loadfont(const float *Points,
                   const unsigned char *Instructions,
                   const int *InstructionIndices,
                   const int *InstructionCounts,
-                  const int *adv,
-                  const short *cmap,
-                  int ng,
+                  const int *glyph_advances,
+                  const short *character_map,
+                  int glyph_count,
                   int descender_height,
                   int font_height) {
   
   Fontinfo f;
   int i;
   
-  memset(f.Glyphs, 0, MAXFONTPATH * sizeof(VGPath));
-  if (ng > MAXFONTPATH) {
+  const int MAXFONTPATH = 500;
+  memset(f.glyphs, 0, MAXFONTPATH * sizeof(VGPath));
+  if (glyph_count > MAXFONTPATH) {
     return f;
   }
-  for (i = 0; i < ng; i++) {
+  for (i = 0; i < glyph_count; i++) {
     const float *p = &Points[PointIndices[i] * 2];
     const unsigned char *instructions = &Instructions[InstructionIndices[i]];
     int ic = InstructionCounts[i];
     VGPath path = vgCreatePath(VG_PATH_FORMAT_STANDARD, VG_PATH_DATATYPE_F,
                                1.0/65536.0f, 0.0f, 0, 0,
                                VG_PATH_CAPABILITY_ALL);
-    f.Glyphs[i] = path;
+    f.glyphs[i] = path;
     if (ic) {
       vgAppendPathData(path, ic, instructions, p);
       VGErrorCode err = vgGetError();
@@ -99,9 +96,9 @@ Fontinfo loadfont(const float *Points,
       }
     }
   }
-  f.CharacterMap = cmap;
-  f.GlyphAdvances = adv;
-  f.Count = ng;
+  f.character_map = character_map;
+  f.glyph_advances = glyph_advances;
+  f.glyph_count = glyph_count;
   f.descender_height = descender_height;
   f.font_height = font_height;
   return f;
@@ -229,6 +226,7 @@ void Image(VGfloat x, VGfloat y, int w, int h, const char *filename) {
   vgDestroyImage(img);
 }
 
+extern Fontinfo *SansTypeface, *SerifTypeface, *MonoTypeface;
 Fontinfo _SansTypeface, _SerifTypeface, _MonoTypeface;
 Fontinfo *SansTypeface = NULL, *SerifTypeface = NULL, *MonoTypeface = NULL;
 
@@ -273,9 +271,9 @@ void loadfonts() {
 }
 
 void unloadfonts() {
-  unloadfont(SansTypeface->Glyphs, SansTypeface->Count);
-  unloadfont(SerifTypeface->Glyphs, SerifTypeface->Count);
-  unloadfont(MonoTypeface->Glyphs, MonoTypeface->Count);
+  unloadfont(SansTypeface->glyphs, SansTypeface->glyph_count);
+  unloadfont(SerifTypeface->glyphs, SerifTypeface->glyph_count);
+  unloadfont(MonoTypeface->glyphs, MonoTypeface->glyph_count);
   SansTypeface = NULL;
   SerifTypeface = NULL;
   MonoTypeface = NULL;
@@ -456,7 +454,7 @@ void Text(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
   int character;
   unsigned char *ss = (unsigned char *)s;
   while ((ss = next_utf8_char(ss, &character)) != NULL) {
-    int glyph = f->CharacterMap[character];
+    int glyph = f->character_map[character];
     if (glyph == -1) {
       continue;			   //glyph is undefined
     }
@@ -467,13 +465,13 @@ void Text(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
     };
     vgLoadMatrix(mm);
     vgMultMatrix(mat);
-    vgDrawPath(f->Glyphs[glyph], VG_STROKE_PATH|VG_FILL_PATH);
+    vgDrawPath(f->glyphs[glyph], VG_STROKE_PATH|VG_FILL_PATH);
     VGErrorCode err = vgGetError();
     if (err != VG_NO_ERROR) {
       printf("error %d\n", err);
       exit(-1);
     }
-    xx += size * f->GlyphAdvances[glyph] / 65536.0f;
+    xx += size * f->glyph_advances[glyph] / 65536.0f;
   }
   vgLoadMatrix(mm);
 }
@@ -485,11 +483,11 @@ VGfloat TextWidth(const char *s, Fontinfo *f, int pointsize) {
   int character;
   unsigned char *ss = (unsigned char *)s;
   while ((ss = next_utf8_char(ss, &character)) != NULL) {
-    int glyph = f->CharacterMap[character];
+    int glyph = f->character_map[character];
     if (glyph == -1) {
       continue;			   //glyph is undefined
     }
-    tw += size * f->GlyphAdvances[glyph] / 65536.0f;
+    tw += size * f->glyph_advances[glyph] / 65536.0f;
   }
   return tw;
 }
