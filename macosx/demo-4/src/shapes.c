@@ -242,14 +242,6 @@ void Image(VGfloat x, VGfloat y, int w, int h, const char *filename) {
   vgDestroyImage(img);
 }
 
-// dumpscreen writes the raster
-void dumpscreen(int w, int h, FILE * fp) {
-  void *ScreenBuffer = malloc(w * h * 4);
-  vgReadPixels(ScreenBuffer, (w * 4), VG_sABGR_8888, 0, 0, w, h);
-  fwrite(ScreenBuffer, 1, w * h * 4, fp);
-  free(ScreenBuffer);
-}
-
 Fontinfo _SansTypeface, _SerifTypeface, _MonoTypeface;
 Fontinfo *SansTypeface = NULL, *SerifTypeface = NULL, *MonoTypeface = NULL;
 
