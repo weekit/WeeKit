@@ -25,7 +25,6 @@ extern "C" {
     fn Background(r:u32, g:u32, b:u32);
     fn Fill(r:u32, g:u32, b:u32, a:f32);
     fn Stroke(r:u32, g:u32, b:u32, a:f32);
-    fn Circle(r:f32, g:f32, b:f32);
     fn TextMid(x:f32, y:f32, s:*const libc::c_char, f:*const Fontinfo, size:u32);
     fn puts(s:*const libc::c_char);
 }
@@ -112,7 +111,7 @@ pub fn demo(width : u32, height : u32) {
         Start(width, height);                              // Start the picture
         Background(0, 0, 0);                               // Black background
         Fill(44, 77, 232, 1.0);                              // Big blue marble
-        Circle(width as f32 / 2.0, 0 as f32, width as f32);                       // The "world"
+        circle(width as f32 / 2.0, 0 as f32, width as f32);                       // The "world"
         Fill(255, 255, 255, 1.0);                            // White text
 
         TextMid(width as f32 / 2.0, height as f32 * 0.7, c_ptr_0, SerifTypeface, width/15);
@@ -123,3 +122,19 @@ pub fn demo(width : u32, height : u32) {
 	finish();
     }
 }
+
+// Ellipse makes an ellipse at the specified location and dimensions
+pub fn ellipse(x : VGfloat, y : VGfloat, w: VGfloat, h: VGfloat) {
+  let path = new_path();
+  unsafe {
+    vguEllipse(path, x, y, w, h);
+    vgDrawPath(path, VGPaintMode::VG_FILL_PATH as u32 | VGPaintMode::VG_STROKE_PATH as u32);
+    vgDestroyPath(path);
+  }
+}
+
+// Circle makes a circle at the specified location and dimensions
+pub fn circle(x : VGfloat, y : VGfloat, r : VGfloat) {
+  ellipse(x, y, r, r);
+}
+
