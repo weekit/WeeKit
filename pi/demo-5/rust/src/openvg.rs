@@ -496,11 +496,6 @@ pub enum VGUArcType {
     VGU_ARC_PIE = 0xF102,
 }
 
-#[link(name = "brcmEGL")]
-
-#[link(name = "brcmGLESv2")]
-
-#[link(name = "brcmOpenVG")]
 extern "C" {
     pub fn vgGetError() -> VGErrorCode;
     pub fn vgFlush();

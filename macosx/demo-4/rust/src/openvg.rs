@@ -496,7 +496,6 @@ pub enum VGUArcType {
     VGU_ARC_PIE = 0xF102,
 }
 
-#[link(name = "AmanithVG.4")]
 extern "C" {
     pub fn vgGetError() -> VGErrorCode;
     pub fn vgFlush();
