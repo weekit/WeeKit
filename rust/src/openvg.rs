@@ -567,7 +567,7 @@ extern "C" {
         width: VGint,
         height: VGint,
     );
-    pub fn vgClear(x: VGint, y: VGint, width: VGint, height: VGint);
+    pub fn vgClear(x: VGuint, y: VGuint, width: VGuint, height: VGuint);
     /* Paths */
     pub fn vgCreatePath(
         pathFormat: VGint,

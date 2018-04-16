@@ -13,20 +13,10 @@
 #include <string.h>
 #include "VG/openvg.h"
 #include "VG/vgu.h"
+
 #include "DejaVuSans.inc"				   // font data
 #include "DejaVuSerif.inc"
 #include "DejaVuSansMono.inc"
-
-typedef struct {
-  // Screen dimentions
-  uint32_t screen_width;
-  uint32_t screen_height;
-  // Window dimentions
-  int32_t window_x;
-  int32_t window_y;
-  uint32_t window_width;
-  uint32_t window_height;
-} STATE_T;
 
 typedef struct {
   const short *CharacterMap;
@@ -39,12 +29,8 @@ typedef struct {
 
 extern Fontinfo *SansTypeface, *SerifTypeface, *MonoTypeface;
 
-static STATE_T _state, *state = &_state;	// global graphics state
 static const int MAXFONTPATH = 500;
-static int init_x = 0;		// Initial window position and size
-static int init_y = 0;
-static unsigned int init_w = 0;
-static unsigned int init_h = 0;
+
 //
 // Terminal settings
 //
@@ -244,23 +230,7 @@ void Image(VGfloat x, VGfloat y, int w, int h, const char *filename) {
 Fontinfo _SansTypeface, _SerifTypeface, _MonoTypeface;
 Fontinfo *SansTypeface = NULL, *SerifTypeface = NULL, *MonoTypeface = NULL;
 
-// initWindowSize requests a specific window size & position, if not called
-// then init() will open a full screen window.
-// Done this way to preserve the original init() behaviour.
-void initWindowSize(int x, int y, unsigned int w, unsigned int h) {
-  init_x = x;
-  init_y = y;
-  init_w = w;
-  init_h = h;
-}
-
-// init sets the system to its initial state
-void init(int w, int h) {
-  memset(state, 0, sizeof(*state));
-  state->window_x = init_x = 0;
-  state->window_y = init_y = 0;
-  state->window_width = init_w = w;
-  state->window_height = init_h = h;
+void loadfonts() {
   if (SansTypeface == NULL) {
     SansTypeface = &_SansTypeface; // (Fontinfo *)malloc(sizeof(Fontinfo));
     _SansTypeface = loadfont(DejaVuSans_glyphPoints,
@@ -294,8 +264,7 @@ void init(int w, int h) {
   }
 }
 
-// finish cleans up
-void finish() {
+void unloadfonts() {
   unloadfont(SansTypeface->Glyphs, SansTypeface->Count);
   unloadfont(SerifTypeface->Glyphs, SerifTypeface->Count);
   unloadfont(MonoTypeface->Glyphs, MonoTypeface->Count);
@@ -645,24 +614,13 @@ void Arc(VGfloat x, VGfloat y, VGfloat w, VGfloat h, VGfloat sa, VGfloat aext) {
   vgDestroyPath(path);
 }
 
-// Start begins the picture, clearing a rectangular region with a specified color
-void Start(int width, int height) {
-  VGfloat color[4] = { 1, 1, 1, 1 };
-  vgSetfv(VG_CLEAR_COLOR, 4, color);
-  vgClear(0, 0, width, height);
-  color[0] = 0, color[1] = 0, color[2] = 0;
-  setfill(color);
-  setstroke(color);
-  StrokeWidth(0);
-  vgLoadIdentity();
-}
-
+/*
 // Backgroud clears the screen to a solid background color
 void Background(unsigned int r, unsigned int g, unsigned int b) {
   VGfloat colour[4];
   RGB(r, g, b, colour);
   vgSetfv(VG_CLEAR_COLOR, 4, colour);
-  vgClear(0, 0, state->window_width, state->window_height);
+  vgClear(0, 0, init_w, init_h);
 }
 
 // BackgroundRGB clears the screen to a background color with alpha
@@ -670,13 +628,14 @@ void BackgroundRGB(unsigned int r, unsigned int g, unsigned int b, VGfloat a) {
   VGfloat colour[4];
   RGBA(r, g, b, a, colour);
   vgSetfv(VG_CLEAR_COLOR, 4, colour);
-  vgClear(0, 0, state->window_width, state->window_height);
+  vgClear(0, 0, init_w, init_h);
 }
 
 // WindowClear clears the window to previously set background colour
 void WindowClear() {
-  vgClear(0, 0, state->window_width, state->window_height);
+  vgClear(0, 0, init_w, init_h);
 }
+*/
 
 // AreaClear clears a given rectangle in window coordinates (not affected by
 // transformations)
