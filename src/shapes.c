@@ -71,11 +71,13 @@ Fontinfo loadfont(const float *Points,
                   const int *InstructionCounts,
                   const int *adv,
                   const short *cmap,
-                  int ng) {
-
+                  int ng,
+                  int descender_height,
+                  int font_height) {
+  
   Fontinfo f;
   int i;
-
+  
   memset(f.Glyphs, 0, MAXFONTPATH * sizeof(VGPath));
   if (ng > MAXFONTPATH) {
     return f;
@@ -100,8 +102,8 @@ Fontinfo loadfont(const float *Points,
   f.CharacterMap = cmap;
   f.GlyphAdvances = adv;
   f.Count = ng;
-  f.descender_height = 0;
-  f.font_height = 0;
+  f.descender_height = descender_height;
+  f.font_height = font_height;
   return f;
 }
 
@@ -122,26 +124,26 @@ VGImage createImageFromJpeg(const char *filename) {
   JSAMPARRAY buffer;
   unsigned int bstride;
   unsigned int bbpp;
-
+  
   VGImage img;
   VGubyte *data;
   unsigned int width;
   unsigned int height;
   unsigned int dstride;
   unsigned int dbpp;
-
+  
   VGubyte *brow;
   VGubyte *drow;
   unsigned int x;
   unsigned int lilEndianTest = 1;
   VGImageFormat rgbaFormat;
-
+  
   // Check for endianness
   if (((unsigned char *)&lilEndianTest)[0] == 1)
     rgbaFormat = VG_sABGR_8888;
   else
     rgbaFormat = VG_sRGBA_8888;
-
+  
   // Try to open image file
   infile = fopen(filename, "rb");
   if (infile == NULL) {
@@ -151,30 +153,30 @@ VGImage createImageFromJpeg(const char *filename) {
   // Setup default error handling
   jdc.err = jpeg_std_error(&jerr);
   jpeg_create_decompress(&jdc);
-
+  
   // Set input file
   jpeg_stdio_src(&jdc, infile);
-
+  
   // Read header and start
   jpeg_read_header(&jdc, TRUE);
   jpeg_start_decompress(&jdc);
   width = jdc.output_width;
   height = jdc.output_height;
-
+  
   // Allocate buffer using jpeg allocator
   bbpp = jdc.output_components;
   bstride = width * bbpp;
   buffer = (*jdc.mem->alloc_sarray)
   ((j_common_ptr) & jdc, JPOOL_IMAGE, bstride, 1);
-
+  
   // Allocate image data buffer
   dbpp = 4;
   dstride = width * dbpp;
   data = (VGubyte *) malloc(dstride * height);
-
+  
   // Iterate until all scanlines processed
   while (jdc.output_scanline < height) {
-
+    
     // Read scanline into buffer
     jpeg_read_scanlines(&jdc, buffer, 1);
     drow = data + (height - jdc.output_scanline) * dstride;
@@ -197,16 +199,16 @@ VGImage createImageFromJpeg(const char *filename) {
       }
     }
   }
-
+  
   // Create VG image
   img = vgCreateImage(rgbaFormat, width, height, VG_IMAGE_QUALITY_BETTER);
   vgImageSubData(img, data, dstride, rgbaFormat, 0, 0, width, height);
-
+  
   // Cleanup
   jpeg_destroy_decompress(&jdc);
   fclose(infile);
   free(data);
-
+  
   return img;
 }
 
@@ -238,29 +240,35 @@ void loadfonts() {
                              DejaVuSans_glyphInstructions,
                              DejaVuSans_glyphInstructionIndices,
                              DejaVuSans_glyphInstructionCounts,
-                             DejaVuSans_glyphAdvances, DejaVuSans_characterMap, DejaVuSans_glyphCount);
-    SansTypeface->descender_height = DejaVuSans_descender_height;
-    SansTypeface->font_height = DejaVuSans_font_height;
-
+                             DejaVuSans_glyphAdvances, 
+                             DejaVuSans_characterMap, 
+                             DejaVuSans_glyphCount,
+                             DejaVuSans_descender_height,
+                             DejaVuSans_font_height);
+    
     SerifTypeface = &_SerifTypeface; //(Fontinfo *)malloc(sizeof(Fontinfo));
     _SerifTypeface = loadfont(DejaVuSerif_glyphPoints,
                               DejaVuSerif_glyphPointIndices,
                               DejaVuSerif_glyphInstructions,
                               DejaVuSerif_glyphInstructionIndices,
                               DejaVuSerif_glyphInstructionCounts,
-                              DejaVuSerif_glyphAdvances, DejaVuSerif_characterMap, DejaVuSerif_glyphCount);
-    SerifTypeface->descender_height = DejaVuSerif_descender_height;
-    SerifTypeface->font_height = DejaVuSerif_font_height;
-
+                              DejaVuSerif_glyphAdvances, 
+                              DejaVuSerif_characterMap, 
+                              DejaVuSerif_glyphCount,
+                              DejaVuSerif_descender_height,
+                              DejaVuSerif_font_height);
+    
     MonoTypeface = &_MonoTypeface; //(Fontinfo *)malloc(sizeof(Fontinfo));
     _MonoTypeface = loadfont(DejaVuSansMono_glyphPoints,
                              DejaVuSansMono_glyphPointIndices,
                              DejaVuSansMono_glyphInstructions,
                              DejaVuSansMono_glyphInstructionIndices,
                              DejaVuSansMono_glyphInstructionCounts,
-                             DejaVuSansMono_glyphAdvances, DejaVuSansMono_characterMap, DejaVuSansMono_glyphCount);
-    MonoTypeface->descender_height = DejaVuSansMono_descender_height;
-    MonoTypeface->font_height = DejaVuSansMono_font_height;
+                             DejaVuSansMono_glyphAdvances, 
+                             DejaVuSansMono_characterMap, 
+                             DejaVuSansMono_glyphCount,
+                             DejaVuSansMono_descender_height,
+                             DejaVuSansMono_font_height);
   }
 }
 
@@ -419,7 +427,7 @@ unsigned char *next_utf8_char(unsigned char *utf8, int *codepoint) {
   int seqlen;
   int datalen = (int)strlen((const char *)utf8);
   unsigned char *p = utf8;
-
+  
   if (datalen < 1 || *utf8 == 0) {		   // End of string
     return NULL;
   }
@@ -615,27 +623,27 @@ void Arc(VGfloat x, VGfloat y, VGfloat w, VGfloat h, VGfloat sa, VGfloat aext) {
 }
 
 /*
-// Backgroud clears the screen to a solid background color
-void Background(unsigned int r, unsigned int g, unsigned int b) {
-  VGfloat colour[4];
-  RGB(r, g, b, colour);
-  vgSetfv(VG_CLEAR_COLOR, 4, colour);
-  vgClear(0, 0, init_w, init_h);
-}
-
-// BackgroundRGB clears the screen to a background color with alpha
-void BackgroundRGB(unsigned int r, unsigned int g, unsigned int b, VGfloat a) {
-  VGfloat colour[4];
-  RGBA(r, g, b, a, colour);
-  vgSetfv(VG_CLEAR_COLOR, 4, colour);
-  vgClear(0, 0, init_w, init_h);
-}
-
-// WindowClear clears the window to previously set background colour
-void WindowClear() {
-  vgClear(0, 0, init_w, init_h);
-}
-*/
+ // Backgroud clears the screen to a solid background color
+ void Background(unsigned int r, unsigned int g, unsigned int b) {
+ VGfloat colour[4];
+ RGB(r, g, b, colour);
+ vgSetfv(VG_CLEAR_COLOR, 4, colour);
+ vgClear(0, 0, init_w, init_h);
+ }
+ 
+ // BackgroundRGB clears the screen to a background color with alpha
+ void BackgroundRGB(unsigned int r, unsigned int g, unsigned int b, VGfloat a) {
+ VGfloat colour[4];
+ RGBA(r, g, b, a, colour);
+ vgSetfv(VG_CLEAR_COLOR, 4, colour);
+ vgClear(0, 0, init_w, init_h);
+ }
+ 
+ // WindowClear clears the window to previously set background colour
+ void WindowClear() {
+ vgClear(0, 0, init_w, init_h);
+ }
+ */
 
 // AreaClear clears a given rectangle in window coordinates (not affected by
 // transformations)
