@@ -34,7 +34,7 @@ WKDrawHandler wkDrawHandler;
 // default window dimensions
 #define INITIAL_WINDOW_WIDTH 800
 #define INITIAL_WINDOW_HEIGHT 480
-#define WINDOW_TITLE "AmanithVG Tutorial 09 - Press F1 for help"
+#define WINDOW_TITLE "WeeKit Demo - Press F1 for help"
 
 // The 10.12 SDK adds new symbols and immediately deprecates the old ones
 #if MAC_OS_X_VERSION_MAX_ALLOWED < 101200
