@@ -39,7 +39,6 @@ typedef struct {
 
 extern Fontinfo *SansTypeface, *SerifTypeface, *MonoTypeface;
 
-
 static STATE_T _state, *state = &_state;	// global graphics state
 static const int MAXFONTPATH = 500;
 static int init_x = 0;		// Initial window position and size

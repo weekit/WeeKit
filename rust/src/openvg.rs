@@ -512,18 +512,28 @@ extern "C" {
     pub fn vgGetiv(param_type: VGParamType, count: VGint, values: *const VGint);
     pub fn vgSetParameterf(object: VGHandle, paramType: VGint, value: VGfloat);
     pub fn vgSetParameteri(object: VGHandle, paramType: VGint, value: VGint);
-    pub fn vgSetParameterfv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGfloat);
+    pub fn vgSetParameterfv(
+        object: VGHandle,
+        paramType: VGint,
+        count: VGint,
+        values: *const VGfloat,
+    );
     pub fn vgSetParameteriv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGint);
     pub fn vgGetParameterf(object: VGHandle, paramType: VGint) -> VGfloat;
     pub fn vgGetParameteri(object: VGHandle, paramType: VGint) -> VGint;
     pub fn vgGetParameterVectorSize(object: VGHandle, paramType: VGint) -> VGint;
-    pub fn vgGetParameterfv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGfloat);
+    pub fn vgGetParameterfv(
+        object: VGHandle,
+        paramType: VGint,
+        count: VGint,
+        values: *const VGfloat,
+    );
     pub fn vgGetParameteriv(object: VGHandle, paramType: VGint, count: VGint, values: *const VGint);
     /* Matrix Manipulation */
     pub fn vgLoadIdentity();
-    pub fn vgLoadMatrix(m:*const VGfloat);
-    pub fn vgGetMatrix(m:*const VGfloat);
-    pub fn vgMultMatrix(m:*const VGfloat);
+    pub fn vgLoadMatrix(m: *const VGfloat);
+    pub fn vgGetMatrix(m: *const VGfloat);
+    pub fn vgMultMatrix(m: *const VGfloat);
     pub fn vgTranslate(tx: VGfloat, ty: VGfloat);
     pub fn vgScale(sx: VGfloat, sy: VGfloat);
     pub fn vgShear(shx: VGfloat, shy: VGfloat);
@@ -577,13 +587,13 @@ extern "C" {
         dstPath: VGPath,
         numSegments: VGint,
         pathSegmemts: *const VGubyte,
-        pathData:*const VGbyte,
+        pathData: *const VGbyte,
     );
     pub fn vgModifyPathCoords(
         dstPath: VGPath,
         startIndex: VGint,
         numSegments: VGint,
-        pathData:*const VGbyte,
+        pathData: *const VGbyte,
     );
     pub fn vgTransformPath(dstPath: VGPath, srcPath: VGPath);
     pub fn vgInterpolatePath(
@@ -598,24 +608,24 @@ extern "C" {
         startSegment: VGint,
         numSegments: VGint,
         distance: VGint,
-        x:*const VGfloat,
-        y:*const VGfloat,
-        tangentX:*const VGfloat,
-        tangentY:*const VGfloat,
+        x: *const VGfloat,
+        y: *const VGfloat,
+        tangentX: *const VGfloat,
+        tangentY: *const VGfloat,
     );
     pub fn vgPathBounds(
         path: VGPath,
-        minX:*const VGfloat,
-        minY:*const VGfloat,
-        width:*const VGfloat,
-        height:*const VGfloat,
+        minX: *const VGfloat,
+        minY: *const VGfloat,
+        width: *const VGfloat,
+        height: *const VGfloat,
     );
     pub fn vgPathTransformedBounds(
         path: VGPath,
-        minX:*const VGfloat,
-        minY:*const VGfloat,
-        width:*const VGfloat,
-        height:*const VGfloat,
+        minX: *const VGfloat,
+        minY: *const VGfloat,
+        width: *const VGfloat,
+        height: *const VGfloat,
     );
     pub fn vgDrawPath(path: VGPath, paintModes: VGbitfield);
     /* Paint */
@@ -637,7 +647,7 @@ extern "C" {
     pub fn vgClearImage(image: VGImage, x: VGint, y: VGint, width: VGint, height: VGint);
     pub fn vgImageSubData(
         image: VGImage,
-        data:*const VGbyte,
+        data: *const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         x: VGint,
@@ -647,7 +657,7 @@ extern "C" {
     );
     pub fn vgGetImageSubData(
         image: VGImage,
-        data:*const VGbyte,
+        data: *const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         x: VGint,
@@ -685,7 +695,7 @@ extern "C" {
         height: VGint,
     );
     pub fn vgWritePixels(
-        data:*const VGbyte,
+        data: *const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         dx: VGint,
@@ -703,7 +713,7 @@ extern "C" {
         height: VGint,
     );
     pub fn vgReadPixels(
-        data:*const VGbyte,
+        data: *const VGbyte,
         dataStride: VGint,
         dataFormat: VGImageFormat,
         sx: VGint,
@@ -740,14 +750,14 @@ extern "C" {
     pub fn vgDrawGlyphs(
         font: VGFont,
         glyphCount: VGint,
-        glyphIndices:*const VGfloat,
-        adjustments_x:*const VGfloat,
-        adjustments_y:*const VGfloat,
+        glyphIndices: *const VGfloat,
+        adjustments_x: *const VGfloat,
+        adjustments_y: *const VGfloat,
         paintModes: VGbitfield,
         allowAutoHinting: VGboolean,
     );
     /* Image Filters */
-    pub fn vgColorMatrix(dst: VGImage, src: VGImage, matrix:*const VGfloat);
+    pub fn vgColorMatrix(dst: VGImage, src: VGImage, matrix: *const VGfloat);
     pub fn vgConvolve(
         dst: VGImage,
         src: VGImage,
@@ -812,7 +822,7 @@ extern "C" {
     ) -> VGUErrorCode;
     pub fn vguPolygon(
         path: VGPath,
-        points:*const VGfloat,
+        points: *const VGfloat,
         count: VGfloat,
         closed: VGboolean,
     ) -> VGUErrorCode;
