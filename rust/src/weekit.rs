@@ -121,7 +121,7 @@ pub fn demo(width: u32, height: u32) {
     }
 }
 
-pub fn new_path() -> VGPath {
+fn new_path() -> VGPath {
     unsafe {
         return vgCreatePath(
             VG_PATH_FORMAT_STANDARD,
