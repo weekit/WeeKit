@@ -110,9 +110,9 @@ pub fn text_width(s: &str, f: &Fontinfo, pointsize: u32) -> f32 {
     let mut tw: VGfloat = 0.0;
     let size = pointsize as VGfloat;
     for c in s.chars() {
-        let glyph = f.character_map[c as usize];
-        if glyph != 0 {
-            tw += size * f.glyph_advances[glyph as usize] as f32 / 65536.0;
+        let glyph_index = f.character_map[c as usize];
+        if glyph_index != -1 {
+            tw += size * f.glyph_advances[glyph_index as usize] as f32 / 65536.0;
         }
     }
     return tw as f32;
@@ -126,19 +126,19 @@ pub fn text(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
     unsafe {
         vgGetMatrix(&mm as *const VGfloat);
         for c in s.chars() {
-            let glyph = f.character_map[c as usize];
-            if glyph == 0 {
+            let glyph_index = f.character_map[c as usize];
+            if glyph_index == -1 {
                 continue;
             }
             let mat: [VGfloat; 9] = [size, 0.0, 0.0, 0.0, size, 0.0, xx, y, 1.0];
             vgLoadMatrix(&mm as *const VGfloat);
             vgMultMatrix(&mat as *const VGfloat);
-            let path = f.glyphs[glyph as usize];
+            let path = f.glyphs[glyph_index as usize];
             vgDrawPath(
                 path,
                 VGPaintMode::VG_FILL_PATH as u32 | VGPaintMode::VG_STROKE_PATH as u32,
             );
-            xx += size * f.glyph_advances[glyph as usize] as f32 / 65536.0;
+            xx += size * f.glyph_advances[glyph_index as usize] as f32 / 65536.0;
         }
         vgLoadMatrix(&mm as *const VGfloat);
     }
