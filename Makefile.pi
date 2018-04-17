@@ -1,6 +1,8 @@
 #!/bin/sh
 
-all:	
+all:	app
+
+libwee.so:	src/shapes.c src/platform_pi.c
 	# Build libwee.
 	clang src/shapes.c src/platform_pi.c \
 		-g \
@@ -13,6 +15,7 @@ all:
 		-ljpeg \
 		-o libwee.so
 
+app:	libwee.so
 	# Build and install the main (Rust) binary.
 	cd rust; cargo build
 

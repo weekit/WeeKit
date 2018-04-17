@@ -133,12 +133,10 @@ WKDrawHandler wkDrawHandler;
 int WKMain(WKDrawHandler handler) {
   int w, h;
   egl_init(&w, &h);
-  printf("%d %d\n", w, h);
-
 
   wkDrawHandler = handler;
   wkDrawHandler(w, h);
- eglSwapBuffers(state->display, state->surface);
+  eglSwapBuffers(state->display, state->surface);
   sleep(5);
   egl_finish();
   return 0;
