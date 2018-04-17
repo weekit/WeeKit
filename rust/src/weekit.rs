@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use deja_vu_serif;
+
 extern crate libc;
 
 use openvg::*;
@@ -18,7 +20,6 @@ impl Screen {
         stroke_width(0.0);
         unsafe {
             vgLoadIdentity();
-            loadfonts();
         }
         screen
     }
@@ -33,82 +34,113 @@ impl Screen {
 }
 
 impl Drop for Screen {
-    fn drop(&mut self) {
-        unsafe {
-            unloadfonts();
-        }
-    }
+    fn drop(&mut self) {}
 }
 
 #[repr(C)]
-pub struct Fontinfo {
-    character_map: *const i16,
-    glyph_advances: *const i32,
+pub struct Fontinfo<'a> {
+    character_map: &'a [i16],
+    glyph_advances: &'a [i32],
     glyph_count: i32,
     descender_height: i32,
     font_height: i32,
     glyphs: [VGPath; 500],
 }
 
+pub fn load_font<'a>(
+    points: &'a [VGfloat],
+    point_indices: &'a [i32],
+    glyph_instructions: &'a [i8],
+    glyph_instruction_indices: &'a [i32],
+    glyph_instruction_counts: &'a [i32],
+    glyph_advances: &'a [i32],
+    character_map: &'a [i16],
+    glyph_count: i32,
+    descender_height: i32,
+    font_height: i32,
+) -> Fontinfo<'a> {
+    let mut glyphs: [VGPath; 500] = [0; 500];
+    for i in 0..glyph_count {
+        unsafe {
+            let path = vgCreatePath(
+                VG_PATH_FORMAT_STANDARD,
+                VGPathDatatype::VG_PATH_DATATYPE_F,
+                1.0 / 65536.0,
+                0.0,
+                0,
+                0,
+                VGPathCapabilities::VG_PATH_CAPABILITY_ALL as u32,
+            );
+            let ic = glyph_instruction_counts[i as usize];
+            if ic > 0 {
+                let instructions = glyph_instructions
+                    [glyph_instruction_indices[i as usize] as usize..]
+                    .as_ptr() as *const u8;
+                let p = points[point_indices[i as usize] as usize * 2..].as_ptr() as *const i8;
+                vgAppendPathData(path, ic, instructions, p);
+            }
+            glyphs[i as usize] = path;
+        }
+    }
+
+    Fontinfo {
+        character_map: character_map,
+        glyph_advances: glyph_advances,
+        glyph_count: glyph_count,
+        descender_height: descender_height,
+        font_height: font_height,
+        glyphs: glyphs,
+    }
+}
+
 // text_width returns the width of a text string at the specified font and size.
-pub fn text_width(s: &str, f: *const Fontinfo, pointsize: u32) -> f32 {
+pub fn text_width(s: &str, f: &Fontinfo, pointsize: u32) -> f32 {
     let mut tw: VGfloat = 0.0;
     let size = pointsize as VGfloat;
     for c in s.chars() {
-        unsafe {
-            let glyph = *((*f).character_map.offset(c as isize));
-            if glyph != -1 {
-                tw += size * *((*f).glyph_advances.offset(glyph as isize)) as f32 / 65536.0;
-            }
-        };
+        let glyph = f.character_map[c as usize];
+        if glyph != 0 {
+            tw += size * f.glyph_advances[glyph as usize] as f32 / 65536.0;
+        }
     }
     return tw as f32;
 }
 
-
 // text renders a string of text at a specified location, size, using the specified font glyphs
-pub fn text(x: VGfloat, y: VGfloat, s: &str, f: *const Fontinfo, pointsize: u32) {
+pub fn text(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
     let size = pointsize as VGfloat;
     let mut xx = x;
-    let mm : [VGfloat; 9] = [0.0; 9];
+    let mm: [VGfloat; 9] = [0.0; 9];
     unsafe {
         vgGetMatrix(&mm as *const VGfloat);
         for c in s.chars() {
-            let glyph = *((*f).character_map.offset(c as isize));
-	    if glyph == -1 {
-		continue;
-	    }
-	    let mat : [VGfloat; 9] = [size, 0.0, 0.0, 0.0, size, 0.0, xx, y, 1.0];
+            let glyph = f.character_map[c as usize];
+            if glyph == 0 {
+                continue;
+            }
+            let mat: [VGfloat; 9] = [size, 0.0, 0.0, 0.0, size, 0.0, xx, y, 1.0];
             vgLoadMatrix(&mm as *const VGfloat);
             vgMultMatrix(&mat as *const VGfloat);
-	    let path = (*f).glyphs[glyph as usize];
+            let path = f.glyphs[glyph as usize];
             vgDrawPath(
                 path,
                 VGPaintMode::VG_FILL_PATH as u32 | VGPaintMode::VG_STROKE_PATH as u32,
             );
-            xx += size * *((*f).glyph_advances.offset(glyph as isize)) as f32 / 65536.0;
-	}
+            xx += size * f.glyph_advances[glyph as usize] as f32 / 65536.0;
+        }
         vgLoadMatrix(&mm as *const VGfloat);
     }
 }
 
 // text_mid draws text, centered on (x,y)
-pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: *const Fontinfo, pointsize: u32) {
-  let tw = text_width(s, f, pointsize);
-  text(x - (tw / 2.0), y, s, f, pointsize);
+pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
+    let tw = text_width(s, f, pointsize);
+    text(x - (tw / 2.0), y, s, f, pointsize);
 }
 
 #[link(name = "wee")]
 extern "C" {
-    // platform-dependent
     fn WKMain(f: extern "C" fn(i32, i32) -> ()) -> i64;
-
-    static SansTypeface: *const Fontinfo;
-    static SerifTypeface: *const Fontinfo;
-    static MonoTypeface: *const Fontinfo;
-    fn loadfonts();
-    fn unloadfonts();
-    fn puts(s: *const libc::c_char);
 }
 
 pub fn main(f: extern "C" fn(i32, i32) -> ()) -> i64 {
@@ -131,36 +163,46 @@ pub fn demo(width: u32, height: u32) {
     let str_2 = "Helló Világ";
     let str_3 = "Ahoj světe";
 
-    unsafe {
-        text_mid(
-            width as f32 / 2.0,
-            height as f32 * 0.7,
-            str_0,
-            SerifTypeface,
-            width / 15,
-	);
-        text_mid(
-            width as f32 / 2.0,
-            height as f32 * 0.5,
-            &str_1,
-            SerifTypeface,
-            width / 15,
-        );
-        text_mid(
-            width as f32 / 2.0,
-            height as f32 * 0.3,
-            str_2,
-            SerifTypeface,
-            width / 15,
-        );
-        text_mid(
-            width as f32 / 2.0,
-            height as f32 * 0.1,
-            str_3,
-            SerifTypeface,
-            width / 15,
-        );
-     }
+    let serif_typeface = load_font(
+        &deja_vu_serif::GLYPH_POINTS,
+        &deja_vu_serif::GLYPH_POINT_INDICES,
+        &deja_vu_serif::GLYPH_INSTRUCTIONS,
+        &deja_vu_serif::GLYPH_INSTRUCTION_INDICES,
+        &deja_vu_serif::GLYPH_INSTRUCTION_COUNTS,
+        &deja_vu_serif::GLYPH_ADVANCES,
+        &deja_vu_serif::CHARACTER_MAP,
+        deja_vu_serif::GLYPH_COUNT,
+        deja_vu_serif::DESCENDER_HEIGHT,
+        deja_vu_serif::FONT_HEIGHT,
+    );
+    text_mid(
+        width as f32 / 2.0,
+        height as f32 * 0.7,
+        str_0,
+        &serif_typeface,
+        width / 15,
+    );
+    text_mid(
+        width as f32 / 2.0,
+        height as f32 * 0.5,
+        &str_1,
+        &serif_typeface,
+        width / 15,
+    );
+    text_mid(
+        width as f32 / 2.0,
+        height as f32 * 0.3,
+        str_2,
+        &serif_typeface,
+        width / 15,
+    );
+    text_mid(
+        width as f32 / 2.0,
+        height as f32 * 0.1,
+        str_3,
+        &serif_typeface,
+        width / 15,
+    );
 }
 
 fn new_path() -> VGPath {

@@ -1,5 +1,6 @@
 mod openvg;
 mod weekit;
+mod deja_vu_serif;
 
 extern "C" fn draw_handler(x: i32, y: i32) {
     weekit::demo(x as u32, y as u32);
