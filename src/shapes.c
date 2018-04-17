@@ -14,19 +14,6 @@
 #include "VG/openvg.h"
 #include "VG/vgu.h"
 
-#include "DejaVuSans.inc"				   // font data
-#include "DejaVuSerif.inc"
-#include "DejaVuSansMono.inc"
-
-typedef struct {
-  const short *character_map;
-  const int *glyph_advances;
-  int glyph_count;
-  int descender_height;
-  int font_height;
-  VGPath glyphs[500];
-} Fontinfo;
-
 //
 // Terminal settings
 //
@@ -52,64 +39,6 @@ void rawterm() {
 // restore resets the terminal to the previously saved setting
 void restoreterm() {
   tcsetattr(fileno(stdin), TCSANOW, &orig_term_attr);
-}
-
-//
-// Font functions
-//
-
-// loadfont loads font path data
-// derived from http://web.archive.org/web/20070808195131/http://developer.hybrid.fi/font2openvg/renderFont.cpp.txt
-Fontinfo loadfont(const float *Points,
-                  const int *PointIndices,
-                  const unsigned char *Instructions,
-                  const int *InstructionIndices,
-                  const int *InstructionCounts,
-                  const int *glyph_advances,
-                  const short *character_map,
-                  int glyph_count,
-                  int descender_height,
-                  int font_height) {
-  
-  Fontinfo f;
-  int i;
-  
-  const int MAXFONTPATH = 500;
-  memset(f.glyphs, 0, MAXFONTPATH * sizeof(VGPath));
-  if (glyph_count > MAXFONTPATH) {
-    return f;
-  }
-  for (i = 0; i < glyph_count; i++) {
-    const float *p = &Points[PointIndices[i] * 2];
-    const unsigned char *instructions = &Instructions[InstructionIndices[i]];
-    int ic = InstructionCounts[i];
-    VGPath path = vgCreatePath(VG_PATH_FORMAT_STANDARD, VG_PATH_DATATYPE_F,
-                               1.0/65536.0f, 0.0f, 0, 0,
-                               VG_PATH_CAPABILITY_ALL);
-    f.glyphs[i] = path;
-    if (ic) {
-      vgAppendPathData(path, ic, instructions, p);
-      VGErrorCode err = vgGetError();
-      if (err != VG_NO_ERROR) {
-        printf("error %d\n", err);
-        exit(-1);
-      }
-    }
-  }
-  f.character_map = character_map;
-  f.glyph_advances = glyph_advances;
-  f.glyph_count = glyph_count;
-  f.descender_height = descender_height;
-  f.font_height = font_height;
-  return f;
-}
-
-// unloadfont frees font path data
-void unloadfont(VGPath * glyphs, int n) {
-  int i;
-  for (i = 0; i < n; i++) {
-    vgDestroyPath(glyphs[i]);
-  }
 }
 
 // createImageFromJpeg decompresses a JPEG image to the standard image format
@@ -224,59 +153,6 @@ void Image(VGfloat x, VGfloat y, int w, int h, const char *filename) {
   VGImage img = createImageFromJpeg(filename);
   vgSetPixels(x, y, img, 0, 0, w, h);
   vgDestroyImage(img);
-}
-
-extern Fontinfo *SansTypeface, *SerifTypeface, *MonoTypeface;
-Fontinfo _SansTypeface, _SerifTypeface, _MonoTypeface;
-Fontinfo *SansTypeface = NULL, *SerifTypeface = NULL, *MonoTypeface = NULL;
-
-void loadfonts() {
-  if (SansTypeface == NULL) {
-    SansTypeface = &_SansTypeface; // (Fontinfo *)malloc(sizeof(Fontinfo));
-    _SansTypeface = loadfont(DejaVuSans_glyphPoints,
-                             DejaVuSans_glyphPointIndices,
-                             DejaVuSans_glyphInstructions,
-                             DejaVuSans_glyphInstructionIndices,
-                             DejaVuSans_glyphInstructionCounts,
-                             DejaVuSans_glyphAdvances, 
-                             DejaVuSans_characterMap, 
-                             DejaVuSans_glyphCount,
-                             DejaVuSans_descender_height,
-                             DejaVuSans_font_height);
-    
-    SerifTypeface = &_SerifTypeface; //(Fontinfo *)malloc(sizeof(Fontinfo));
-    _SerifTypeface = loadfont(DejaVuSerif_glyphPoints,
-                              DejaVuSerif_glyphPointIndices,
-                              DejaVuSerif_glyphInstructions,
-                              DejaVuSerif_glyphInstructionIndices,
-                              DejaVuSerif_glyphInstructionCounts,
-                              DejaVuSerif_glyphAdvances, 
-                              DejaVuSerif_characterMap, 
-                              DejaVuSerif_glyphCount,
-                              DejaVuSerif_descender_height,
-                              DejaVuSerif_font_height);
-    
-    MonoTypeface = &_MonoTypeface; //(Fontinfo *)malloc(sizeof(Fontinfo));
-    _MonoTypeface = loadfont(DejaVuSansMono_glyphPoints,
-                             DejaVuSansMono_glyphPointIndices,
-                             DejaVuSansMono_glyphInstructions,
-                             DejaVuSansMono_glyphInstructionIndices,
-                             DejaVuSansMono_glyphInstructionCounts,
-                             DejaVuSansMono_glyphAdvances, 
-                             DejaVuSansMono_characterMap, 
-                             DejaVuSansMono_glyphCount,
-                             DejaVuSansMono_descender_height,
-                             DejaVuSansMono_font_height);
-  }
-}
-
-void unloadfonts() {
-  unloadfont(SansTypeface->glyphs, SansTypeface->glyph_count);
-  unloadfont(SerifTypeface->glyphs, SerifTypeface->glyph_count);
-  unloadfont(MonoTypeface->glyphs, MonoTypeface->glyph_count);
-  SansTypeface = NULL;
-  SerifTypeface = NULL;
-  MonoTypeface = NULL;
 }
 
 //
@@ -416,102 +292,6 @@ void ClipRect(VGint x, VGint y, VGint w, VGint h) {
 // ClipEnd stops limiting drawing area to specified rectangle
 void ClipEnd() {
   vgSeti(VG_SCISSORING, VG_FALSE);
-}
-
-// Text Functions
-
-// next_utf_char handles UTF encoding
-unsigned char *next_utf8_char(unsigned char *utf8, int *codepoint) {
-  int seqlen;
-  int datalen = (int)strlen((const char *)utf8);
-  unsigned char *p = utf8;
-  
-  if (datalen < 1 || *utf8 == 0) {		   // End of string
-    return NULL;
-  }
-  if (!(utf8[0] & 0x80)) {			   // 0xxxxxxx
-    *codepoint = (wchar_t) utf8[0];
-    seqlen = 1;
-  } else if ((utf8[0] & 0xE0) == 0xC0) {		   // 110xxxxx
-    *codepoint = (int)(((utf8[0] & 0x1F) << 6) | (utf8[1] & 0x3F));
-    seqlen = 2;
-  } else if ((utf8[0] & 0xF0) == 0xE0) {		   // 1110xxxx
-    *codepoint = (int)(((utf8[0] & 0x0F) << 12) | ((utf8[1] & 0x3F) << 6) | (utf8[2] & 0x3F));
-    seqlen = 3;
-  } else {
-    return NULL;				   // No code points this high here
-  }
-  p += seqlen;
-  return p;
-}
-
-
-// Text renders a string of text at a specified location, size, using the specified font glyphs
-// derived from http://web.archive.org/web/20070808195131/http://developer.hybrid.fi/font2openvg/renderFont.cpp.txt
-void Text(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
-  VGfloat size = (VGfloat) pointsize, xx = x, mm[9];
-  vgGetMatrix(mm);
-  int character;
-  unsigned char *ss = (unsigned char *)s;
-  while ((ss = next_utf8_char(ss, &character)) != NULL) {
-    int glyph = f->character_map[character];
-    if (glyph == -1) {
-      continue;			   //glyph is undefined
-    }
-    VGfloat mat[9] = {
-      size, 0.0f, 0.0f,
-      0.0f, size, 0.0f,
-      xx, y, 1.0f
-    };
-    vgLoadMatrix(mm);
-    vgMultMatrix(mat);
-    vgDrawPath(f->glyphs[glyph], VG_STROKE_PATH|VG_FILL_PATH);
-    VGErrorCode err = vgGetError();
-    if (err != VG_NO_ERROR) {
-      printf("error %d\n", err);
-      exit(-1);
-    }
-    xx += size * f->glyph_advances[glyph] / 65536.0f;
-  }
-  vgLoadMatrix(mm);
-}
-
-// TextWidth returns the width of a text string at the specified font and size.
-VGfloat TextWidth(const char *s, Fontinfo *f, int pointsize) {
-  VGfloat tw = 0.0;
-  VGfloat size = (VGfloat) pointsize;
-  int character;
-  unsigned char *ss = (unsigned char *)s;
-  while ((ss = next_utf8_char(ss, &character)) != NULL) {
-    int glyph = f->character_map[character];
-    if (glyph == -1) {
-      continue;			   //glyph is undefined
-    }
-    tw += size * f->glyph_advances[glyph] / 65536.0f;
-  }
-  return tw;
-}
-
-// TextMid draws text, centered on (x,y)
-void TextMid(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
-  VGfloat tw = TextWidth(s, f, pointsize);
-  Text(x - (tw / 2.0), y, s, f, pointsize);
-}
-
-// TextEnd draws text, with its end aligned to (x,y)
-void TextEnd(VGfloat x, VGfloat y, const char *s, Fontinfo *f, int pointsize) {
-  VGfloat tw = TextWidth(s, f, pointsize);
-  Text(x - tw, y, s, f, pointsize);
-}
-
-// TextHeight reports a font's height
-VGfloat TextHeight(Fontinfo *f, int pointsize) {
-  return (f->font_height * pointsize) / 65536;
-}
-
-// TextDepth reports a font's depth (how far under the baseline it goes)
-VGfloat TextDepth(Fontinfo *f, int pointsize) {
-  return (-f->descender_height * pointsize) / 65536;
 }
 
 //

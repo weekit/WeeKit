@@ -193,6 +193,23 @@ pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
     text(x - (tw / 2.0), y, s, f, pointsize);
 }
 
+// text_end draws text, with its end aligned to (x,y)
+pub fn text_end(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
+    let tw = text_width(s, f, pointsize);
+    text(x - tw, y, s, f, pointsize);
+}
+
+// text_height reports a font's height
+pub fn text_height(f: &Fontinfo, pointsize: u32) -> VGfloat {
+  return (f.font_height * pointsize as i32) as VGfloat / 65536.0;
+}
+
+// text_depth reports a font's depth (how far under the baseline it goes)
+pub fn text_depth(f: &Fontinfo, pointsize: u32) -> VGfloat {
+  return (-f.descender_height * pointsize as i32) as VGfloat / 65536.0;
+}
+
+
 #[link(name = "wee")]
 extern "C" {
     fn WKMain(f: extern "C" fn(u32, u32) -> ()) -> i64;
