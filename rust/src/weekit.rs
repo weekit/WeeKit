@@ -1,18 +1,20 @@
 #![allow(dead_code)]
 
 use deja_vu_serif;
+use deja_vu_sans;
+use deja_vu_sans_mono;
 
 extern crate libc;
 
 use openvg::*;
 
-struct Screen {
+pub struct Screen {
     w: u32,
     h: u32,
 }
 
 impl Screen {
-    fn new(w: u32, h: u32) -> Screen {
+    pub fn new(w: u32, h: u32) -> Screen {
         let screen = Screen { w: w, h: h };
         screen.clear(255, 255, 255);
         fill(0, 0, 0, 1.0);
@@ -103,6 +105,51 @@ impl<'a> Fontinfo<'a> {
             glyphs: glyphs,
         }
     }
+
+    pub fn serif() -> Fontinfo<'static> {
+        Fontinfo::new(
+            &deja_vu_serif::GLYPH_POINTS,
+            &deja_vu_serif::GLYPH_POINT_INDICES,
+            &deja_vu_serif::GLYPH_INSTRUCTIONS,
+            &deja_vu_serif::GLYPH_INSTRUCTION_INDICES,
+            &deja_vu_serif::GLYPH_INSTRUCTION_COUNTS,
+            &deja_vu_serif::GLYPH_ADVANCES,
+            &deja_vu_serif::CHARACTER_MAP,
+            deja_vu_serif::GLYPH_COUNT,
+            deja_vu_serif::DESCENDER_HEIGHT,
+            deja_vu_serif::FONT_HEIGHT,
+        )
+    }
+
+    pub fn sans() -> Fontinfo<'static> {
+        Fontinfo::new(
+            &deja_vu_sans::GLYPH_POINTS,
+            &deja_vu_sans::GLYPH_POINT_INDICES,
+            &deja_vu_sans::GLYPH_INSTRUCTIONS,
+            &deja_vu_sans::GLYPH_INSTRUCTION_INDICES,
+            &deja_vu_sans::GLYPH_INSTRUCTION_COUNTS,
+            &deja_vu_sans::GLYPH_ADVANCES,
+            &deja_vu_sans::CHARACTER_MAP,
+            deja_vu_sans::GLYPH_COUNT,
+            deja_vu_sans::DESCENDER_HEIGHT,
+            deja_vu_sans::FONT_HEIGHT,
+        )
+    }
+
+    pub fn sans_mono() -> Fontinfo<'static> {
+        Fontinfo::new(
+            &deja_vu_sans_mono::GLYPH_POINTS,
+            &deja_vu_sans_mono::GLYPH_POINT_INDICES,
+            &deja_vu_sans_mono::GLYPH_INSTRUCTIONS,
+            &deja_vu_sans_mono::GLYPH_INSTRUCTION_INDICES,
+            &deja_vu_sans_mono::GLYPH_INSTRUCTION_COUNTS,
+            &deja_vu_sans_mono::GLYPH_ADVANCES,
+            &deja_vu_sans_mono::CHARACTER_MAP,
+            deja_vu_sans_mono::GLYPH_COUNT,
+            deja_vu_sans_mono::DESCENDER_HEIGHT,
+            deja_vu_sans_mono::FONT_HEIGHT,
+        )
+    }
 }
 
 // text_width returns the width of a text string at the specified font and size.
@@ -152,69 +199,13 @@ pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
 
 #[link(name = "wee")]
 extern "C" {
-    fn WKMain(f: extern "C" fn(i32, i32) -> ()) -> i64;
+    fn WKMain(f: extern "C" fn(u32, u32) -> ()) -> i64;
 }
 
-pub fn main(f: extern "C" fn(i32, i32) -> ()) -> i64 {
+pub fn main(f: extern "C" fn(u32, u32) -> ()) -> i64 {
     unsafe {
         return WKMain(f);
     }
-}
-
-pub fn demo(width: u32, height: u32) {
-    let screen = Screen::new(width, height);
-    screen.clear(0, 0, 0);
-
-    fill(44, 77, 232, 1.0); // Big blue marble
-    circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"
-
-    fill(255, 255, 255, 1.0); // White text
-
-    let str_0 = "hello, world";
-    let str_1 = "Héj, världen";
-    let str_2 = "Helló Világ";
-    let str_3 = "Ahoj světe";
-
-    let serif_typeface = Fontinfo::new(
-        &deja_vu_serif::GLYPH_POINTS,
-        &deja_vu_serif::GLYPH_POINT_INDICES,
-        &deja_vu_serif::GLYPH_INSTRUCTIONS,
-        &deja_vu_serif::GLYPH_INSTRUCTION_INDICES,
-        &deja_vu_serif::GLYPH_INSTRUCTION_COUNTS,
-        &deja_vu_serif::GLYPH_ADVANCES,
-        &deja_vu_serif::CHARACTER_MAP,
-        deja_vu_serif::GLYPH_COUNT,
-        deja_vu_serif::DESCENDER_HEIGHT,
-        deja_vu_serif::FONT_HEIGHT,
-    );
-    text_mid(
-        width as f32 / 2.0,
-        height as f32 * 0.7,
-        str_0,
-        &serif_typeface,
-        width / 15,
-    );
-    text_mid(
-        width as f32 / 2.0,
-        height as f32 * 0.5,
-        &str_1,
-        &serif_typeface,
-        width / 15,
-    );
-    text_mid(
-        width as f32 / 2.0,
-        height as f32 * 0.3,
-        str_2,
-        &serif_typeface,
-        width / 15,
-    );
-    text_mid(
-        width as f32 / 2.0,
-        height as f32 * 0.1,
-        str_3,
-        &serif_typeface,
-        width / 15,
-    );
 }
 
 fn new_path() -> VGPath {
