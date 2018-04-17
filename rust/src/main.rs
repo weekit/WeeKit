@@ -16,9 +16,9 @@ extern "C" fn draw_handler(width: u32, height: u32) {
     let str_2 = "Helló Világ";
     let str_3 = "Ahoj světe";
 
-    let serif_typeface = Fontinfo::serif();
-    let sans_typeface = Fontinfo::sans();
-    let sans_mono_typeface = Fontinfo::sans_mono();
+    let serif_typeface = Font::serif();
+    let sans_typeface = Font::sans();
+    let sans_mono_typeface = Font::sans_mono();
 
     text_mid(
         width as f32 / 2.0,

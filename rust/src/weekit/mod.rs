@@ -36,7 +36,7 @@ impl Screen {
     }
 }
 
-pub struct Fontinfo<'a> {
+pub struct Font<'a> {
     character_map: &'a [i16],
     glyph_advances: &'a [i32],
     glyph_count: i32,
@@ -45,7 +45,7 @@ pub struct Fontinfo<'a> {
     glyphs: [VGPath; 500],
 }
 
-impl<'a> Drop for Fontinfo<'a> {
+impl<'a> Drop for Font<'a> {
     fn drop(&mut self) {
         for i in 0..self.glyph_count {
             unsafe { vgDestroyPath(self.glyphs[i as usize]) }
@@ -53,7 +53,7 @@ impl<'a> Drop for Fontinfo<'a> {
     }
 }
 
-impl<'a> Fontinfo<'a> {
+impl<'a> Font<'a> {
     pub fn new(
         glyph_points: &'a [VGfloat],
         glyph_point_indices: &'a [i32],
@@ -65,7 +65,7 @@ impl<'a> Fontinfo<'a> {
         glyph_count: i32,
         descender_height: i32,
         font_height: i32,
-    ) -> Fontinfo<'a> {
+    ) -> Font<'a> {
         let mut glyphs: [VGPath; 500] = [0; 500];
 
         for i in 0..glyph_count {
@@ -92,7 +92,7 @@ impl<'a> Fontinfo<'a> {
             }
         }
 
-        Fontinfo {
+        Font {
             character_map: character_map,
             glyph_advances: glyph_advances,
             glyph_count: glyph_count,
@@ -102,8 +102,8 @@ impl<'a> Fontinfo<'a> {
         }
     }
 
-    pub fn serif() -> Fontinfo<'static> {
-        Fontinfo::new(
+    pub fn serif() -> Font<'static> {
+        Font::new(
             &deja_vu_serif::GLYPH_POINTS,
             &deja_vu_serif::GLYPH_POINT_INDICES,
             &deja_vu_serif::GLYPH_INSTRUCTIONS,
@@ -117,8 +117,8 @@ impl<'a> Fontinfo<'a> {
         )
     }
 
-    pub fn sans() -> Fontinfo<'static> {
-        Fontinfo::new(
+    pub fn sans() -> Font<'static> {
+        Font::new(
             &deja_vu_sans::GLYPH_POINTS,
             &deja_vu_sans::GLYPH_POINT_INDICES,
             &deja_vu_sans::GLYPH_INSTRUCTIONS,
@@ -132,8 +132,8 @@ impl<'a> Fontinfo<'a> {
         )
     }
 
-    pub fn sans_mono() -> Fontinfo<'static> {
-        Fontinfo::new(
+    pub fn sans_mono() -> Font<'static> {
+        Font::new(
             &deja_vu_sans_mono::GLYPH_POINTS,
             &deja_vu_sans_mono::GLYPH_POINT_INDICES,
             &deja_vu_sans_mono::GLYPH_INSTRUCTIONS,
@@ -149,7 +149,7 @@ impl<'a> Fontinfo<'a> {
 }
 
 // text_width returns the width of a text string at the specified font and size.
-pub fn text_width(s: &str, f: &Fontinfo, pointsize: u32) -> f32 {
+pub fn text_width(s: &str, f: &Font, pointsize: u32) -> f32 {
     let mut tw: VGfloat = 0.0;
     let size = pointsize as VGfloat;
     for c in s.chars() {
@@ -162,7 +162,7 @@ pub fn text_width(s: &str, f: &Fontinfo, pointsize: u32) -> f32 {
 }
 
 // text renders a string of text at a specified location, size, using the specified font glyphs
-pub fn text(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
+pub fn text(x: VGfloat, y: VGfloat, s: &str, f: &Font, pointsize: u32) {
     let size = pointsize as VGfloat;
     let mut xx = x;
     let mm: [VGfloat; 9] = [0.0; 9];
@@ -188,27 +188,26 @@ pub fn text(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
 }
 
 // text_mid draws text, centered on (x,y)
-pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
+pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: &Font, pointsize: u32) {
     let tw = text_width(s, f, pointsize);
     text(x - (tw / 2.0), y, s, f, pointsize);
 }
 
 // text_end draws text, with its end aligned to (x,y)
-pub fn text_end(x: VGfloat, y: VGfloat, s: &str, f: &Fontinfo, pointsize: u32) {
+pub fn text_end(x: VGfloat, y: VGfloat, s: &str, f: &Font, pointsize: u32) {
     let tw = text_width(s, f, pointsize);
     text(x - tw, y, s, f, pointsize);
 }
 
 // text_height reports a font's height
-pub fn text_height(f: &Fontinfo, pointsize: u32) -> VGfloat {
-  return (f.font_height * pointsize as i32) as VGfloat / 65536.0;
+pub fn text_height(f: &Font, pointsize: u32) -> VGfloat {
+    return (f.font_height * pointsize as i32) as VGfloat / 65536.0;
 }
 
 // text_depth reports a font's depth (how far under the baseline it goes)
-pub fn text_depth(f: &Fontinfo, pointsize: u32) -> VGfloat {
-  return (-f.descender_height * pointsize as i32) as VGfloat / 65536.0;
+pub fn text_depth(f: &Font, pointsize: u32) -> VGfloat {
+    return (-f.descender_height * pointsize as i32) as VGfloat / 65536.0;
 }
-
 
 #[link(name = "wee")]
 extern "C" {
