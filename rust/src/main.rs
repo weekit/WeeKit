@@ -1,8 +1,4 @@
-mod openvg;
 mod weekit;
-mod deja_vu_serif;
-mod deja_vu_sans;
-mod deja_vu_sans_mono;
 
 use weekit::*;
 
@@ -52,12 +48,12 @@ extern "C" fn draw_handler(width: u32, height: u32) {
         &serif_typeface,
         width / 15,
     );
-    weekit::set_fill(&[1.0, 0.0, 0.0, 1.0]);
-    weekit::set_stroke(&[1.0, 1.0, 0.0, 1.0]);
-    weekit::rect(0.0, 0.0, 10.0, 10.0);
-    weekit::set_fill(&[0.0, 0.0, 1.0, 1.0]);
-    weekit::set_stroke(&[1.0, 0.0, 1.0, 1.0]);
-    weekit::rect(width as f32 - 20., height as f32 - 20., 20., 20.);
+    set_fill(&[1.0, 0.0, 0.0, 1.0]);
+    set_stroke(&[1.0, 1.0, 0.0, 1.0]);
+    rect(0.0, 0.0, 10.0, 10.0);
+    set_fill(&[0.0, 0.0, 1.0, 1.0]);
+    set_stroke(&[1.0, 0.0, 1.0, 1.0]);
+    rect(width as f32 - 20., height as f32 - 20., 20., 20.);
 }
 
 fn main() {

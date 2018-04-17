@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 
-use deja_vu_serif;
-use deja_vu_sans;
-use deja_vu_sans_mono;
+mod openvg;
+mod deja_vu_serif;
+mod deja_vu_sans;
+mod deja_vu_sans_mono;
 
 extern crate libc;
 
-use openvg::*;
+use self::openvg::*;
 
 pub struct Screen {
     w: u32,
@@ -35,11 +36,6 @@ impl Screen {
     }
 }
 
-impl Drop for Screen {
-    fn drop(&mut self) {}
-}
-
-#[repr(C)]
 pub struct Fontinfo<'a> {
     character_map: &'a [i16],
     glyph_advances: &'a [i32],
