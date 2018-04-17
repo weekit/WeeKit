@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 
 extern crate libc;
-use std;
-use std::iter::FromIterator;
 
 use openvg::*;
 
@@ -42,7 +40,63 @@ impl Drop for Screen {
     }
 }
 
-type Fontinfo = [u8; 2032];
+#[repr(C)]
+pub struct Fontinfo {
+    character_map: *const i16,
+    glyph_advances: *const i32,
+    glyph_count: i32,
+    descender_height: i32,
+    font_height: i32,
+    glyphs: [VGPath; 500],
+}
+
+// text_width returns the width of a text string at the specified font and size.
+pub fn text_width(s: &str, f: *const Fontinfo, pointsize: u32) -> f32 {
+    let mut tw: VGfloat = 0.0;
+    let size = pointsize as VGfloat;
+    for c in s.chars() {
+        unsafe {
+            let glyph = *((*f).character_map.offset(c as isize));
+            if glyph != -1 {
+                tw += size * *((*f).glyph_advances.offset(glyph as isize)) as f32 / 65536.0;
+            }
+        };
+    }
+    return tw as f32;
+}
+
+
+// text renders a string of text at a specified location, size, using the specified font glyphs
+pub fn text(x: VGfloat, y: VGfloat, s: &str, f: *const Fontinfo, pointsize: u32) {
+    let size = pointsize as VGfloat;
+    let mut xx = x;
+    let mm : [VGfloat; 9] = [0.0; 9];
+    unsafe {
+        vgGetMatrix(&mm as *const VGfloat);
+        for c in s.chars() {
+            let glyph = *((*f).character_map.offset(c as isize));
+	    if glyph == -1 {
+		continue;
+	    }
+	    let mat : [VGfloat; 9] = [size, 0.0, 0.0, 0.0, size, 0.0, xx, y, 1.0];
+            vgLoadMatrix(&mm as *const VGfloat);
+            vgMultMatrix(&mat as *const VGfloat);
+	    let path = (*f).glyphs[glyph as usize];
+            vgDrawPath(
+                path,
+                VGPaintMode::VG_FILL_PATH as u32 | VGPaintMode::VG_STROKE_PATH as u32,
+            );
+            xx += size * *((*f).glyph_advances.offset(glyph as isize)) as f32 / 65536.0;
+	}
+        vgLoadMatrix(&mm as *const VGfloat);
+    }
+}
+
+// text_mid draws text, centered on (x,y)
+pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: *const Fontinfo, pointsize: u32) {
+  let tw = text_width(s, f, pointsize);
+  text(x - (tw / 2.0), y, s, f, pointsize);
+}
 
 #[link(name = "wee")]
 extern "C" {
@@ -54,7 +108,6 @@ extern "C" {
     static MonoTypeface: *const Fontinfo;
     fn loadfonts();
     fn unloadfonts();
-    fn TextMid(x: f32, y: f32, s: *const libc::c_char, f: *const Fontinfo, size: u32);
     fn puts(s: *const libc::c_char);
 }
 
@@ -67,58 +120,47 @@ pub fn main(f: extern "C" fn(i32, i32) -> ()) -> i64 {
 pub fn demo(width: u32, height: u32) {
     let screen = Screen::new(width, height);
     screen.clear(0, 0, 0);
-	
+
     fill(44, 77, 232, 1.0); // Big blue marble
     circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"
 
     fill(255, 255, 255, 1.0); // White text
-	
+
     let str_0 = "hello, world";
-    let c_str_0 = std::ffi::CString::new(str_0).unwrap();
-    let c_ptr_0 = c_str_0.as_ptr();
-
-    let vec_1 = vec!['H', 'é', 'j', ',', ' ', 'v', 'ä', 'r', 'l', 'd', 'e', 'n'];
-    let str_1 = String::from_iter(vec_1);
-    let c_str_1 = std::ffi::CString::new(str_1).unwrap();
-    let c_ptr_1 = c_str_1.as_ptr();
-
+    let str_1 = "Héj, världen";
     let str_2 = "Helló Világ";
-    let c_str_2 = std::ffi::CString::new(str_2).unwrap();
-    let c_ptr_2 = c_str_2.as_ptr();
-
     let str_3 = "Ahoj světe";
-    let c_str_3 = std::ffi::CString::new(str_3).unwrap();
-    let c_ptr_3 = c_str_3.as_ptr();
-	unsafe {		
-        TextMid(
+
+    unsafe {
+        text_mid(
             width as f32 / 2.0,
             height as f32 * 0.7,
-            c_ptr_0,
+            str_0,
             SerifTypeface,
             width / 15,
-        );
-        TextMid(
+	);
+        text_mid(
             width as f32 / 2.0,
             height as f32 * 0.5,
-            c_ptr_1,
+            &str_1,
             SerifTypeface,
             width / 15,
         );
-        TextMid(
+        text_mid(
             width as f32 / 2.0,
             height as f32 * 0.3,
-            c_ptr_2,
+            str_2,
             SerifTypeface,
             width / 15,
         );
-        TextMid(
+        text_mid(
             width as f32 / 2.0,
             height as f32 * 0.1,
-            c_ptr_3,
+            str_3,
             SerifTypeface,
             width / 15,
         );
-    }
+     }
 }
 
 fn new_path() -> VGPath {
