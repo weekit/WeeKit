@@ -47,49 +47,61 @@ pub struct Fontinfo<'a> {
     glyphs: [VGPath; 500],
 }
 
-pub fn load_font<'a>(
-    points: &'a [VGfloat],
-    point_indices: &'a [i32],
-    glyph_instructions: &'a [i8],
-    glyph_instruction_indices: &'a [i32],
-    glyph_instruction_counts: &'a [i32],
-    glyph_advances: &'a [i32],
-    character_map: &'a [i16],
-    glyph_count: i32,
-    descender_height: i32,
-    font_height: i32,
-) -> Fontinfo<'a> {
-    let mut glyphs: [VGPath; 500] = [0; 500];
-    for i in 0..glyph_count {
-        unsafe {
-            let path = vgCreatePath(
-                VG_PATH_FORMAT_STANDARD,
-                VGPathDatatype::VG_PATH_DATATYPE_F,
-                1.0 / 65536.0,
-                0.0,
-                0,
-                0,
-                VGPathCapabilities::VG_PATH_CAPABILITY_ALL as u32,
-            );
-            let ic = glyph_instruction_counts[i as usize];
-            if ic > 0 {
-                let instructions = glyph_instructions
-                    [glyph_instruction_indices[i as usize] as usize..]
-                    .as_ptr() as *const u8;
-                let p = points[point_indices[i as usize] as usize * 2..].as_ptr() as *const i8;
-                vgAppendPathData(path, ic, instructions, p);
-            }
-            glyphs[i as usize] = path;
+impl<'a> Drop for Fontinfo<'a> {
+    fn drop(&mut self) {
+        for i in 0..self.glyph_count {
+            unsafe { vgDestroyPath(self.glyphs[i as usize]) }
         }
     }
+}
 
-    Fontinfo {
-        character_map: character_map,
-        glyph_advances: glyph_advances,
-        glyph_count: glyph_count,
-        descender_height: descender_height,
-        font_height: font_height,
-        glyphs: glyphs,
+impl<'a> Fontinfo<'a> {
+    pub fn new(
+        glyph_points: &'a [VGfloat],
+        glyph_point_indices: &'a [i32],
+        glyph_instructions: &'a [i8],
+        glyph_instruction_indices: &'a [i32],
+        glyph_instruction_counts: &'a [i32],
+        glyph_advances: &'a [i32],
+        character_map: &'a [i16],
+        glyph_count: i32,
+        descender_height: i32,
+        font_height: i32,
+    ) -> Fontinfo<'a> {
+        let mut glyphs: [VGPath; 500] = [0; 500];
+
+        for i in 0..glyph_count {
+            unsafe {
+                let path = vgCreatePath(
+                    VG_PATH_FORMAT_STANDARD,
+                    VGPathDatatype::VG_PATH_DATATYPE_F,
+                    1.0 / 65536.0,
+                    0.0,
+                    0,
+                    0,
+                    VGPathCapabilities::VG_PATH_CAPABILITY_ALL as u32,
+                );
+                let ic = glyph_instruction_counts[i as usize];
+                if ic > 0 {
+                    let instructions = glyph_instructions
+                        [glyph_instruction_indices[i as usize] as usize..]
+                        .as_ptr() as *const u8;
+                    let points = glyph_points[glyph_point_indices[i as usize] as usize * 2..]
+                        .as_ptr() as *const i8;
+                    vgAppendPathData(path, ic, instructions, points);
+                }
+                glyphs[i as usize] = path;
+            }
+        }
+
+        Fontinfo {
+            character_map: character_map,
+            glyph_advances: glyph_advances,
+            glyph_count: glyph_count,
+            descender_height: descender_height,
+            font_height: font_height,
+            glyphs: glyphs,
+        }
     }
 }
 
@@ -163,7 +175,7 @@ pub fn demo(width: u32, height: u32) {
     let str_2 = "Helló Világ";
     let str_3 = "Ahoj světe";
 
-    let serif_typeface = load_font(
+    let serif_typeface = Fontinfo::new(
         &deja_vu_serif::GLYPH_POINTS,
         &deja_vu_serif::GLYPH_POINT_INDICES,
         &deja_vu_serif::GLYPH_INSTRUCTIONS,
