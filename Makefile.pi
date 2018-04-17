@@ -2,9 +2,8 @@
 
 all:	app
 
-libwee.so:	src/shapes.c src/platform_pi.c
-	# Build libwee.
-	clang src/shapes.c src/platform_pi.c \
+libwee.so:	src/platform_pi.c
+	clang src/platform_pi.c \
 		-g \
 		-I /opt/vc/include \
 		-I /usr/local/include \
