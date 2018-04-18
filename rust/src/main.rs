@@ -4,7 +4,7 @@ use weekit::*;
 
 extern "C" fn draw_handler(width: u32, height: u32) {
     let screen = Screen::new(width, height);
-    screen.clear(0, 0, 0);
+    screen.background(0, 0, 0);
 
     fill(44, 77, 232, 1.0); // Big blue marble
     circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"

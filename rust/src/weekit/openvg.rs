@@ -823,7 +823,7 @@ extern "C" {
     pub fn vguPolygon(
         path: VGPath,
         points: *const VGfloat,
-        count: VGfloat,
+        count: VGint,
         closed: VGboolean,
     ) -> VGUErrorCode;
     pub fn vguRect(
