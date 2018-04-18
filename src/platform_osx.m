@@ -60,10 +60,6 @@ VGboolean done;
   void *vgContext;
   // OpenVG surface
   void *vgWindowSurface;
-#ifdef AM_SRE
-  // OpenGL texture used to blit the AmanithVG SRE surface
-  GLuint blitTexture;
-#endif
   // a Core Video display link
   CVDisplayLinkRef displayLink;
   // fps counter
@@ -79,13 +75,6 @@ VGboolean done;
 - (VGint) openvgSurfaceWidthGet;
 - (VGint) openvgSurfaceHeightGet;
 - (VGint) openvgSurfaceMaxDimensionGet;
-#ifdef AM_SRE
-// setup the texture that will be used to blit AmanithVG SRE surface
-- (void) blitTextureGenerate;
-- (void) blitTextureResize :(const VGuint)width :(const VGuint)height;
-- (void) blitTextureDestroy;
-- (void) blitTextureDraw;
-#endif
 
 /*****************************************************************
  Windowing system
@@ -180,86 +169,6 @@ VGboolean done;
 
   return vgPrivSurfaceMaxDimensionGetMZT();
 }
-
-#ifdef AM_SRE
-
-- (void) blitTextureGenerate {
-
-  // get AmanithVG SRE surface pixels pointer
-  void* surfacePixels = (void*)vgPrivGetSurfacePixelsMZT(vgWindowSurface);
-
-  // generate a 2D rectangular texture
-  glGenTextures(1, &blitTexture);
-  glEnable(GL_TEXTURE_RECTANGLE_ARB);
-  glDisable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, blitTexture);
-  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_STORAGE_HINT_APPLE, GL_STORAGE_CACHED_APPLE);
-  glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_TRUE);
-  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  // select best format, in order to avoid swizzling
-  glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA, [self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet], 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, surfacePixels);
-
-  // setup basic OpenGL states
-  glEnable(GL_MULTISAMPLE);
-  glDisable(GL_LIGHTING);
-  glShadeModel(GL_FLAT);
-  glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-  glDisable(GL_CULL_FACE);
-  glDisable(GL_ALPHA_TEST);
-  glDisable(GL_SCISSOR_TEST);
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_BLEND);
-  glDepthMask(GL_FALSE);
-  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-}
-
-- (void) blitTextureResize :(const VGuint)width :(const VGuint)height {
-
-  // resize the OpenGL texture used to blit AmanithVG SRE drawing surface
-  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, blitTexture);
-  glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, vgPrivGetSurfacePixelsMZT(vgWindowSurface));
-}
-
-- (void) blitTextureDestroy {
-
-  if (blitTexture != 0) {
-    glDeleteTextures(1, &blitTexture);
-  }
-}
-
-- (void) blitTextureDraw {
-
-  // get AmanithVG surface dimensions and pixels pointer
-  VGint surfaceWidth = [self openvgSurfaceWidthGet];
-  VGint surfaceHeight = [self openvgSurfaceHeightGet];
-  void* surfacePixels = (void*)vgPrivGetSurfacePixelsMZT(vgWindowSurface);
-
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  // simply put a quad, covering the whole window
-  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, blitTexture);
-  glTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, surfaceWidth, surfaceHeight, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, surfacePixels);
-  glBegin(GL_QUADS);
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex2f(-1.0f, 1.0f);
-  glTexCoord2f(0.0f, surfaceHeight);
-  glVertex2f(-1.0f, -1.0f);
-  glTexCoord2f(surfaceWidth, surfaceHeight);
-  glVertex2f(1.0f, -1.0f);
-  glTexCoord2f(surfaceWidth, 0.0f);
-  glVertex2f(1.0f, 1.0f);
-  glEnd();
-}
-
-#endif // AM_SRE
 
 /*****************************************************************
  Windowing system
@@ -392,14 +301,12 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     NSOpenGLPFADoubleBuffer,
     NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
     NSOpenGLPFAColorSize, 32,
-#ifndef AM_SRE
     // AmanithVG GLE
     NSOpenGLPFASupersample,
     NSOpenGLPFADepthSize, 24,
     NSOpenGLPFAStencilSize, 8,
     NSOpenGLPFASampleBuffers, 1,
     NSOpenGLPFASamples, 8,
-#endif
     (NSOpenGLPixelFormatAttribute)0
   };
   NSOpenGLPixelFormat *format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
@@ -415,9 +322,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // initialize private members
   vgContext = NULL;
   vgWindowSurface = NULL;
-#ifdef AM_SRE
-  blitTexture = 0;
-#endif
   return self;
 }
 
@@ -443,10 +347,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 
   // init OpenVG
   if ([self openvgInit :width :height]) {
-#ifdef AM_SRE
-    // create and setup the texture used to blit AmanithVG SRE surface
-    [self blitTextureGenerate];
-#endif
   }
   else {
     NSLog(@"Unable to initialize AmanithVG.");
@@ -487,11 +387,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // draw OpenVG content
     wkDrawHandler([self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet]);
 
-#ifdef AM_SRE
-    // blit AmanithVG SRE drawing surface, using a texture
-    [self blitTextureDraw];
-#endif
-
     // copy a double-buffered context’s back buffer to its front buffer
     CGLFlushDrawable([[self openGLContext] CGLContextObj]);
 
@@ -528,13 +423,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     VGint surfaceWidth = [self openvgSurfaceWidthGet];
     VGint surfaceHeight = [self openvgSurfaceHeightGet];
 
-#ifdef AM_SRE
-    // resize OpenGL viewport
-    glViewport(0, 0, (GLsizei)bound.width, (GLsizei)bound.height);
-    // resize the OpenGL texture used to blit AmanithVG SRE drawing surface
-    [self blitTextureResize :surfaceWidth :surfaceHeight];
-#endif
-
     // unlock the context
     CGLUnlockContext([[self openGLContext] CGLContextObj]);
     [self unlockFocus];
@@ -551,10 +439,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // release the display link
   CVDisplayLinkRelease(displayLink);
 
-#ifdef AM_SRE
-  // destroy texture used to blit AmanithVG SRE surface
-  [self blitTextureDestroy];
-#endif
   // destroy OpenVG context and surface
   [self openvgDestroy];
 
