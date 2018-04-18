@@ -14,10 +14,19 @@ extern "C" {
     fn WKMain(f: extern "C" fn(u32, u32) -> ()) -> i64;
 }
 
-// main should be called from client applications to run the main event loop.
-pub fn main(f: extern "C" fn(u32, u32) -> ()) -> i64 {
+static mut DRAW_HANDLER : fn(u32, u32) -> () = |_w:u32, _h:u32| {};
+
+extern "C" fn draw_handler_wrapper(width:u32, height:u32) -> () {
     unsafe {
-        return WKMain(f);
+        DRAW_HANDLER(width, height);
+    }
+}
+
+// main should be called from client applications to run the main event loop.
+pub fn main(draw_handler: fn(u32, u32) -> ()) -> i64 {
+    unsafe {
+        DRAW_HANDLER = draw_handler;
+        return WKMain(draw_handler_wrapper);
     }
 }
 
@@ -287,7 +296,7 @@ pub fn scale(x: VGfloat, y: VGfloat) {
 //
 
 // set_fill sets the fill color.
-pub fn set_fill(color: &[VGfloat]) {
+fn set_fill(color: &[VGfloat]) {
     unsafe {
         let fill_paint = vgCreatePaint();
         vgSetParameteri(
@@ -307,7 +316,7 @@ pub fn set_fill(color: &[VGfloat]) {
 }
 
 // set_stroke sets the stroke color.
-pub fn set_stroke(color: &[VGfloat]) {
+fn set_stroke(color: &[VGfloat]) {
     unsafe {
         let stroke_paint = vgCreatePaint();
         vgSetParameteri(

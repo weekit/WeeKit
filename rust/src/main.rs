@@ -2,7 +2,7 @@ mod weekit;
 
 use weekit::*;
 
-extern "C" fn draw_handler(width: u32, height: u32) {
+fn draw_handler(width: u32, height: u32) {
     let screen = Screen::new(width, height);
     screen.background(0, 0, 0);
 
@@ -48,11 +48,11 @@ extern "C" fn draw_handler(width: u32, height: u32) {
         &serif_typeface,
         width / 15,
     );
-    set_fill(&[1.0, 0.0, 0.0, 1.0]);
-    set_stroke(&[1.0, 1.0, 0.0, 1.0]);
+    fill(255, 255, 255, 1.0);
+    stroke(255, 255, 255, 1.0);
     rect(0.0, 0.0, 10.0, 10.0);
-    set_fill(&[0.0, 0.0, 1.0, 1.0]);
-    set_stroke(&[1.0, 0.0, 1.0, 1.0]);
+    fill(0, 0, 255, 1.0);
+    stroke(255, 0, 255, 1.0);
     rect(width as f32 - 20., height as f32 - 20., 20., 20.);
 }
 
