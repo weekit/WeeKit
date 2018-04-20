@@ -26,10 +26,11 @@
 
 // WeeKit handler functions
 typedef void (*WKDrawHandler)(int, int);
+typedef void (*WKEventHandler)(short, short, int);
 
 // Handler pointers
 WKDrawHandler wkDrawHandler;
-
+WKEventHandler wkEventHandler;
 
 // default window dimensions
 #define INITIAL_WINDOW_WIDTH 800
@@ -665,8 +666,8 @@ int _main(int argc, char *argv[]) {
 }
 
 
-int WKMain(WKDrawHandler h) {
-  wkDrawHandler = h;
+int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
+  wkDrawHandler = drawHandler;
+  wkEventHandler = eventHandler;
   return _main(0, NULL);
 }
-
