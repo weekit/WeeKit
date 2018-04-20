@@ -2,8 +2,8 @@
 
 all:	app
 
-libwee.so:	src/platform_pi.c
-	clang src/platform_pi.c \
+libwee.so:	src/platform_pi.c src/touches_pi.c
+	clang src/platform_pi.c src/touches_pi.c \
 		-g \
 		-I /opt/vc/include \
 		-I /usr/local/include \

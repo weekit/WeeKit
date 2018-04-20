@@ -68,18 +68,31 @@ void egl_finish() {
 
 // WeeKit handler functions
 typedef void (*WKDrawHandler)(int, int);
+typedef void (*WKEventHandler)(short, short, int);
 
 // Handler pointers
 WKDrawHandler wkDrawHandler;
+WKEventHandler wkEventHandler;
 
-int WKMain(WKDrawHandler handler) {
+int start_touches();
+void handle_touches();
+
+int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
+  wkDrawHandler = drawHandler;
+  wkEventHandler = eventHandler;
+
   int w, h;
   egl_init(&w, &h);
 
-  wkDrawHandler = handler;
-  wkDrawHandler(w, h);
-  eglSwapBuffers(state->display, state->surface);
-  sleep(5);
+  start_touches();
+
+  unsigned char running = 0x01;
+  while(running) {
+  	wkDrawHandler(w, h);
+  	eglSwapBuffers(state->display, state->surface);
+	handle_touches();
+  	usleep(1000);
+  }
   egl_finish();
   return 0;
 }

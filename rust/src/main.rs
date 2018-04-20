@@ -61,6 +61,10 @@ fn draw_handler(width: u32, height: u32) {
     rect(width as f32 - s - m, height as f32 - s - m, s, s);
 }
 
+fn event_handler(t: u16, c: u16, v: i32) {
+    println!("EVENT {} {} {}", t, c, v);
+}
+
 fn main() {
-    weekit::main(draw_handler);
+    weekit::main(draw_handler, event_handler);
 }

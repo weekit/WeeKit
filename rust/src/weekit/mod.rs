@@ -11,7 +11,7 @@ use self::openvg::*;
 
 #[link(name = "wee")]
 extern "C" {
-    fn WKMain(f: extern "C" fn(u32, u32) -> ()) -> i64;
+    fn WKMain(f: extern "C" fn(u32, u32) -> (), e: extern "C" fn(u16, u16, i32) -> ()) -> i64;
 }
 
 static mut DRAW_HANDLER : fn(u32, u32) -> () = |_w:u32, _h:u32| {};
@@ -22,11 +22,20 @@ extern "C" fn draw_handler_wrapper(width:u32, height:u32) -> () {
     }
 }
 
+static mut EVENT_HANDLER : fn(u16, u16, i32) -> () = |_t:u16, _c:u16, _v:i32| {};
+
+extern "C" fn event_handler_wrapper(t:u16, c:u16, v:i32) -> () {
+    unsafe {
+        EVENT_HANDLER(t, c, v);
+    }
+}
+
 // main should be called from client applications to run the main event loop.
-pub fn main(draw_handler: fn(u32, u32) -> ()) -> i64 {
+pub fn main(draw_handler: fn(u32, u32) -> (), event_handler: fn(u16, u16, i32) -> ()) -> i64 {
     unsafe {
         DRAW_HANDLER = draw_handler;
-        return WKMain(draw_handler_wrapper);
+        EVENT_HANDLER = event_handler;
+        return WKMain(draw_handler_wrapper, event_handler_wrapper);
     }
 }
 
