@@ -24,7 +24,6 @@
 #include <VG/vgu.h>
 #include <VG/vgext.h>
 
-
 // https://www.kernel.org/doc/Documentation/input/multi-touch-protocol.txt
 // on linux systems, defined in /usr/include/linux/events.h
 #define EV_SYN			0x00
@@ -54,16 +53,6 @@ WKEventHandler wkEventHandler;
 #define INITIAL_WINDOW_HEIGHT 480
 #define WINDOW_TITLE "WeeKit Demo - Press F1 for help"
 
-// The 10.12 SDK adds new symbols and immediately deprecates the old ones
-#if MAC_OS_X_VERSION_MAX_ALLOWED < 101200
-#define NSAlertStyleInformational NSInformationalAlertStyle
-#define NSWindowStyleMaskTitled NSTitledWindowMask
-#define NSWindowStyleMaskClosable NSClosableWindowMask
-#define NSWindowStyleMaskMiniaturizable NSMiniaturizableWindowMask
-#define NSWindowStyleMaskResizable NSResizableWindowMask
-#define NSEventMaskAny NSAnyEventMask
-#endif
-
 /*****************************************************************
  Global variables
  *****************************************************************/
@@ -72,65 +61,18 @@ VGboolean done;
 /*****************************************************************
  View (interface)
  *****************************************************************/
-@interface TutorialView : NSOpenGLView <NSWindowDelegate> {
-
-  // OpenVG context
-  void *vgContext;
-  // OpenVG surface
-  void *vgWindowSurface;
-  // a Core Video display link
-  CVDisplayLinkRef displayLink;
-  // fps counter
-  VGuint time0, time1;
-  VGuint framesCounter;
+@interface WKView : NSOpenGLView <NSWindowDelegate> {
+  void *vgContext; 			// OpenVG context
+  void *vgWindowSurface; 		// OpenVG surface
+  CVDisplayLinkRef displayLink; 	// a Core Video display link
+  VGuint time0, time1, framesCounter; 	// fps counter
 }
-
-/*****************************************************************
- OpenVG
- *****************************************************************/
-- (VGboolean) openvgInit :(const VGuint)width :(const VGuint)height;
-- (void) openvgDestroy;
-- (VGint) openvgSurfaceWidthGet;
-- (VGint) openvgSurfaceHeightGet;
-- (VGint) openvgSurfaceMaxDimensionGet;
-
-/*****************************************************************
- Windowing system
- *****************************************************************/
-- (void) messageDialog :(const char*)title :(const char*)message;
-- (void) aboutDialog;
-- (void) helpDialog;
-- (VGuint) getTimeMS;
-- (void) windowTitleUpdate;
-// Core Video display link
-- (CVReturn)getFrameForTime :(const CVTimeStamp *)outputTime;
-// implementation of NSOpenGLView methods
-- (id) initWithFrame :(NSRect)frameRect;
-- (void) prepareOpenGL;
-- (void) drawRect :(NSRect)dirtyRect;
-- (void) reshape;
-- (void) dealloc;
-// mouse and keyboard events
-- (void) mouseDown :(NSEvent *)theEvent;
-- (void) mouseUp :(NSEvent *)theEvent;
-- (void) mouseDragged:(NSEvent *)theEvent;
-- (void) rightMouseDown :(NSEvent *)theEvent;
-- (void) rightMouseUp :(NSEvent *)theEvent;
-- (void) rightMouseDragged:(NSEvent *)theEvent;
-- (void) keyDown :(NSEvent *)theEvent;
-- (BOOL) acceptsFirstResponder;
-- (BOOL) becomeFirstResponder;
-- (BOOL) resignFirstResponder;
-- (BOOL) isFlipped;
-// menu handlers
-- (void) applicationTerminate :(id)sender;
-
 @end
 
 /*****************************************************************
  View (implementation)
  *****************************************************************/
-@implementation TutorialView
+@implementation WKView
 
 /*****************************************************************
  OpenVG
@@ -161,7 +103,6 @@ VGboolean done;
 }
 
 - (void) openvgDestroy {
-
   // unbind context and surface
   vgPrivMakeCurrentMZT(NULL, NULL);
   // destroy OpenVG surface
@@ -172,19 +113,16 @@ VGboolean done;
 
 // get the width of OpenVG drawing surface, in pixels
 - (VGint) openvgSurfaceWidthGet {
-
   return vgPrivGetSurfaceWidthMZT(vgWindowSurface);
 }
 
 // get the height of OpenVG drawing surface, in pixels
 - (VGint) openvgSurfaceHeightGet {
-
   return vgPrivGetSurfaceHeightMZT(vgWindowSurface);
 }
 
 // get the maximum surface dimension supported by the OpenVG backend
 - (VGint) openvgSurfaceMaxDimensionGet {
-
   return vgPrivSurfaceMaxDimensionGetMZT();
 }
 
@@ -192,14 +130,11 @@ VGboolean done;
  Windowing system
  *****************************************************************/
 - (void) messageDialog :(const char*)title :(const char*)message {
-
-  NSString* sMessage;
   NSAlert* alert = [[NSAlert alloc] init];
 
-  (void)title;
   [alert addButtonWithTitle:@"OK"];
   // set message
-  sMessage = [NSString stringWithCString:message encoding:NSASCIIStringEncoding];
+  NSString *sMessage = [NSString stringWithCString:message encoding:NSASCIIStringEncoding];
   [alert setMessageText:sMessage];
   [alert setAlertStyle:NSAlertStyleInformational];
   // display the modal dialog
@@ -299,14 +234,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
                                     CVOptionFlags flagsIn,
                                     CVOptionFlags* flagsOut,
                                     void* displayLinkContext) {
-
-  (void)displayLink;
-  (void)now;
-  (void)outputTime;
-  (void)flagsIn;
-  (void)flagsOut;
-
-  CVReturn result = [(__bridge TutorialView*)displayLinkContext getFrameForTime:outputTime];
+  CVReturn result = [(__bridge WKView*)displayLinkContext getFrameForTime:outputTime];
   return result;
 }
 
@@ -391,8 +319,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 }
 
 - (void) drawRect :(NSRect)dirtyRect {
-
-  (void)dirtyRect;
 
   if ([self lockFocusIfCanDraw]) {
     
@@ -529,33 +455,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   wkEventHandler(EV_SYN, SYN_REPORT, 0);
 }
 
-- (void) rightMouseDown: (NSEvent *)theEvent {
-
-  NSPoint p;
-
-  // convert window location into view location
-  p = [theEvent locationInWindow];
-  p = [self convertPoint: p fromView: nil];
-}
-
-- (void) rightMouseUp: (NSEvent *)theEvent {
-
-  NSPoint p;
-
-  // convert window location into view location
-  p = [theEvent locationInWindow];
-  p = [self convertPoint: p fromView: nil];
-}
-
-- (void) rightMouseDragged:(NSEvent *)theEvent {
-
-  NSPoint p;
-
-  // convert window location into view location
-  p = [theEvent locationInWindow];
-  p = [self convertPoint: p fromView: nil];
-}
-
 - (void) keyDown:(NSEvent *)theEvent {
 
   char *chars = (char *)[[theEvent characters] cStringUsingEncoding: NSMacOSRomanStringEncoding];
@@ -635,14 +534,14 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
  Main
  *****************************************************************/
 void applicationMenuPopulate(NSMenu* subMenu,
-                             TutorialView* view) {
+                             WKView* view) {
 
   // quit application
   NSMenuItem* menuItem = [subMenu addItemWithTitle:[NSString stringWithFormat:@"%@", NSLocalizedString(@"Quit", nil)] action:@selector(applicationTerminate:) keyEquivalent:@"q"];
   [menuItem setTarget:view];
 }
 
-void mainMenuPopulate(TutorialView* view) {
+void mainMenuPopulate(WKView* view) {
 
   NSMenuItem* menuItem;
   NSMenu* subMenu;
@@ -659,15 +558,14 @@ void mainMenuPopulate(TutorialView* view) {
   [NSApp setMainMenu:mainMenu];
 }
 
-void applicationMenuCreate(TutorialView* view) {
+void applicationMenuCreate(WKView* view) {
 
   mainMenuPopulate(view);
 }
 
-int _main(int argc, char *argv[]) {
-
-  (void)argc;
-  (void)argv;
+int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
+  wkDrawHandler = drawHandler;
+  wkEventHandler = eventHandler;
 
   @autoreleasepool {
 
@@ -683,7 +581,7 @@ int _main(int argc, char *argv[]) {
     [window setTitle: @ WINDOW_TITLE];
 
     // create the OpenGL view
-    TutorialView* view = [[TutorialView alloc] initWithFrame: frame];
+    WKView* view = [[WKView alloc] initWithFrame: frame];
 
     // link the view to the window
     [window setDelegate: view];
@@ -718,11 +616,4 @@ int _main(int argc, char *argv[]) {
   } // @autoreleasepool
 
   return EXIT_SUCCESS;
-}
-
-
-int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
-  wkDrawHandler = drawHandler;
-  wkEventHandler = eventHandler;
-  return _main(0, NULL);
 }
