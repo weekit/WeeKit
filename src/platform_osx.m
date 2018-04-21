@@ -24,6 +24,23 @@
 #include <VG/vgu.h>
 #include <VG/vgext.h>
 
+
+// https://www.kernel.org/doc/Documentation/input/multi-touch-protocol.txt
+// on linux systems, defined in /usr/include/linux/events.h
+#define EV_SYN			0x00
+#define EV_KEY			0x01
+#define EV_ABS			0x03
+
+#define SYN_REPORT		0
+#define SYN_MT_REPORT		2
+
+#define ABS_X			0x00
+#define ABS_Y			0x01
+#define ABS_MT_SLOT		0x2f	/* MT slot being modified */
+#define ABS_MT_POSITION_X	0x35	/* Center X ellipse position */
+#define ABS_MT_POSITION_Y	0x36	/* Center Y ellipse position */
+#define ABS_MT_TRACKING_ID	0x39	/* Unique ID of initiated contact */
+
 // WeeKit handler functions
 typedef void (*WKDrawHandler)(int, int);
 typedef void (*WKEventHandler)(short, short, int);
@@ -454,6 +471,19 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // convert window location into view location
   p = [theEvent locationInWindow];
   p = [self convertPoint: p fromView: nil];
+  p.y = self.frame.size.height - p.y;
+
+  int x = (int) p.x;
+  int y = (int) p.y;
+
+  wkEventHandler(EV_KEY, 330, 1);
+  wkEventHandler(EV_ABS, ABS_MT_SLOT, 0);
+  wkEventHandler(EV_ABS, ABS_MT_TRACKING_ID, 1);
+  wkEventHandler(EV_ABS, ABS_X, x);
+  wkEventHandler(EV_ABS, ABS_Y, y);
+  wkEventHandler(EV_ABS, ABS_MT_POSITION_X, x);
+  wkEventHandler(EV_ABS, ABS_MT_POSITION_Y, y);
+  wkEventHandler(EV_SYN, SYN_REPORT, 0);
 }
 
 - (void) mouseUp: (NSEvent *)theEvent {
@@ -463,6 +493,19 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // convert window location into view location
   p = [theEvent locationInWindow];
   p = [self convertPoint: p fromView: nil];
+  p.y = self.frame.size.height - p.y;
+
+  int x = (int) p.x;
+  int y = (int) p.y;
+
+  wkEventHandler(EV_ABS, ABS_MT_SLOT, 0);
+  wkEventHandler(EV_ABS, ABS_MT_TRACKING_ID, 1);
+  wkEventHandler(EV_ABS, ABS_X, x);
+  wkEventHandler(EV_ABS, ABS_Y, y);
+  wkEventHandler(EV_ABS, ABS_MT_POSITION_X, x);
+  wkEventHandler(EV_ABS, ABS_MT_POSITION_Y, y);
+  wkEventHandler(EV_KEY, 330, 0);
+  wkEventHandler(EV_SYN, SYN_REPORT, 0);
 }
 
 - (void) mouseDragged:(NSEvent *)theEvent {
@@ -472,6 +515,18 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // convert window location into view location
   p = [theEvent locationInWindow];
   p = [self convertPoint: p fromView: nil];
+  p.y = self.frame.size.height - p.y;
+
+  int x = (int) p.x;
+  int y = (int) p.y;
+
+  wkEventHandler(EV_ABS, ABS_MT_SLOT, 0);
+  wkEventHandler(EV_ABS, ABS_MT_TRACKING_ID, 1);
+  wkEventHandler(EV_ABS, ABS_X, x);
+  wkEventHandler(EV_ABS, ABS_Y, y);
+  wkEventHandler(EV_ABS, ABS_MT_POSITION_X, x);
+  wkEventHandler(EV_ABS, ABS_MT_POSITION_Y, y);
+  wkEventHandler(EV_SYN, SYN_REPORT, 0);
 }
 
 - (void) rightMouseDown: (NSEvent *)theEvent {
