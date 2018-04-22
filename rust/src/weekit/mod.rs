@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+
 mod openvg;
 mod deja_vu_serif;
 mod deja_vu_sans;
@@ -10,10 +11,27 @@ extern crate libc;
 
 use self::openvg::*;
 
+#[derive(Copy, Clone)]
+pub struct Event {
+    slot: i32, // A unique integer for tracking a touch.
+    kind: i32, // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
+    x: i32,    // X position on the touchpad.
+    y: i32,    // Y position on the touchpad.
+    sec: i32,  // Time of the event (seconds).
+    usec: i32, // Time of the event (sub-second milliseconds).
+}
+
 #[link(name = "wee")]
 extern "C" {
     fn WKMain(f: extern "C" fn(u32, u32) -> (), e: extern "C" fn(u16, u16, i32) -> ()) -> i64;
 }
+
+pub trait Application {
+    fn draw(&self, width: u32, height: u32) -> ();
+    fn event(&self, event: &Event) -> ();
+}
+
+static mut APPLICATION: Option<&Application> = None;
 
 static mut DRAW_HANDLER: Option<fn(u32, u32) -> ()> = None;
 
@@ -48,7 +66,11 @@ extern "C" fn event_handler_wrapper(t: u16, c: u16, v: i32) -> () {
 }
 
 // main should be called from client applications to run the main event loop.
-pub fn main(draw_handler: fn(u32, u32) -> (), event_handler: fn(u16, u16, i32) -> ()) -> i64 {
+pub fn main<T: Application>(
+    application: &T,
+    draw_handler: fn(u32, u32) -> (),
+    event_handler: fn(u16, u16, i32) -> (),
+) -> i64 {
     unsafe {
         TOUCH_PAD = Some(touch::TouchPad::new());
         DRAW_HANDLER = Some(draw_handler);

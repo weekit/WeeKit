@@ -2,6 +2,13 @@ mod weekit;
 
 use weekit::*;
 
+struct Application {}
+
+impl weekit::Application for Application {
+    fn draw(&self, width: u32, height: u32) -> () {}
+    fn event(&self, ev: &weekit::Event) -> () {}
+}
+
 fn draw_handler(width: u32, height: u32) {
     let screen = Screen::new(width, height);
     screen.background(64, 0, 64);
@@ -66,5 +73,6 @@ fn event_handler(t: u16, c: u16, v: i32) {
 }
 
 fn main() {
-    weekit::main(draw_handler, event_handler);
+    let app = Application {};
+    weekit::main(&app, draw_handler, event_handler);
 }
