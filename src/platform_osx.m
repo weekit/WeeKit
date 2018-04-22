@@ -402,34 +402,18 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   int x = (int) p.x;
   int y = (int) p.y;
 
-  wkEventHandler(EV_KEY, 330, 1);
   wkEventHandler(EV_ABS, ABS_MT_SLOT, 0);
   wkEventHandler(EV_ABS, ABS_MT_TRACKING_ID, 1);
-  wkEventHandler(EV_ABS, ABS_X, x);
-  wkEventHandler(EV_ABS, ABS_Y, y);
   wkEventHandler(EV_ABS, ABS_MT_POSITION_X, x);
   wkEventHandler(EV_ABS, ABS_MT_POSITION_Y, y);
+  wkEventHandler(EV_KEY, 330, 1);
+  wkEventHandler(EV_ABS, ABS_X, x);
+  wkEventHandler(EV_ABS, ABS_Y, y);
   wkEventHandler(EV_SYN, SYN_REPORT, 0);
 }
 
 - (void) mouseUp: (NSEvent *)theEvent {
-
-  NSPoint p;
-
-  // convert window location into view location
-  p = [theEvent locationInWindow];
-  p = [self convertPoint: p fromView: nil];
-  p.y = self.frame.size.height - p.y;
-
-  int x = (int) p.x;
-  int y = (int) p.y;
-
-  wkEventHandler(EV_ABS, ABS_MT_SLOT, 0);
-  wkEventHandler(EV_ABS, ABS_MT_TRACKING_ID, 1);
-  wkEventHandler(EV_ABS, ABS_X, x);
-  wkEventHandler(EV_ABS, ABS_Y, y);
-  wkEventHandler(EV_ABS, ABS_MT_POSITION_X, x);
-  wkEventHandler(EV_ABS, ABS_MT_POSITION_Y, y);
+  wkEventHandler(EV_ABS, ABS_MT_TRACKING_ID, -1);
   wkEventHandler(EV_KEY, 330, 0);
   wkEventHandler(EV_SYN, SYN_REPORT, 0);
 }
@@ -446,12 +430,10 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   int x = (int) p.x;
   int y = (int) p.y;
 
-  wkEventHandler(EV_ABS, ABS_MT_SLOT, 0);
-  wkEventHandler(EV_ABS, ABS_MT_TRACKING_ID, 1);
-  wkEventHandler(EV_ABS, ABS_X, x);
-  wkEventHandler(EV_ABS, ABS_Y, y);
   wkEventHandler(EV_ABS, ABS_MT_POSITION_X, x);
   wkEventHandler(EV_ABS, ABS_MT_POSITION_Y, y);
+  wkEventHandler(EV_ABS, ABS_X, x);
+  wkEventHandler(EV_ABS, ABS_Y, y);
   wkEventHandler(EV_SYN, SYN_REPORT, 0);
 }
 
