@@ -4,6 +4,7 @@ mod openvg;
 mod deja_vu_serif;
 mod deja_vu_sans;
 mod deja_vu_sans_mono;
+pub mod touch;
 
 extern crate libc;
 
@@ -22,11 +23,15 @@ extern "C" fn draw_handler_wrapper(width:u32, height:u32) -> () {
     }
 }
 
+trait EventHandler {
+  fn handle(&self, t:u16, c:u16, v:i32);
+}
+
 static mut EVENT_HANDLER : fn(u16, u16, i32) -> () = |_t:u16, _c:u16, _v:i32| {};
 
 extern "C" fn event_handler_wrapper(t:u16, c:u16, v:i32) -> () {
     unsafe {
-        EVENT_HANDLER(t, c, v);
+	EVENT_HANDLER(t, c, v)
     }
 }
 

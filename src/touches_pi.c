@@ -18,7 +18,7 @@ int fd;
 
 int openTouchScreen()
 {
-        if ((fd = open("/dev/input/event0", O_RDONLY)) < 0) {
+        if ((fd = open("/dev/input/event1", O_RDONLY)) < 0) {
                 return 1;
         }
 	return 0;
