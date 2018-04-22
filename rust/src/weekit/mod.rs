@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-
 mod openvg;
 mod deja_vu_serif;
 mod deja_vu_sans;
@@ -13,12 +12,25 @@ use self::openvg::*;
 
 #[derive(Copy, Clone)]
 pub struct Event {
-    slot: i32, // A unique integer for tracking a touch.
-    kind: i32, // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
-    x: i32,    // X position on the touchpad.
-    y: i32,    // Y position on the touchpad.
-    sec: i32,  // Time of the event (seconds).
-    usec: i32, // Time of the event (sub-second milliseconds).
+    slot: usize, // A unique integer for tracking a touch.
+    kind: i32,   // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
+    x: i32,      // X position on the touchpad.
+    y: i32,      // Y position on the touchpad.
+    sec: i32,    // Time of the event (seconds).
+    usec: i32,   // Time of the event (sub-second milliseconds).
+}
+
+impl Event {
+    pub fn new(slot: usize, kind: i32, x: i32, y: i32, sec: i32, usec: i32) -> Event {
+        Event {
+            slot: slot,
+            kind: kind,
+            x: x,
+            y: y,
+            sec: sec,
+            usec: usec,
+        }
+    }
 }
 
 #[link(name = "wee")]
@@ -33,48 +45,31 @@ pub trait Application {
 
 static mut APPLICATION: Option<&Application> = None;
 
-static mut DRAW_HANDLER: Option<fn(u32, u32) -> ()> = None;
+static mut TOUCH_PAD: Option<touch::TouchPad> = None;
 
 extern "C" fn draw_handler_wrapper(width: u32, height: u32) -> () {
     unsafe {
-        match DRAW_HANDLER {
-            Some(h) => h(width, height),
+        match APPLICATION {
+            Some(app) => app.draw(width, height),
             None => {}
         }
     }
 }
 
-trait EventHandler {
-    fn handle(&self, t: u16, c: u16, v: i32);
-}
-
-static mut TOUCH_PAD: Option<touch::TouchPad> = None;
-
-static mut EVENT_HANDLER: Option<fn(u16, u16, i32) -> ()> = None;
-
 extern "C" fn event_handler_wrapper(t: u16, c: u16, v: i32) -> () {
     unsafe {
         match TOUCH_PAD {
-            Some(ref mut pad) => pad.handle(t, c, v),
-            None => {}
-        }
-        match EVENT_HANDLER {
-            Some(h) => h(t, c, v),
+            Some(ref mut touchpad) => touchpad.handle(t, c, v),
             None => {}
         }
     }
 }
 
 // main should be called from client applications to run the main event loop.
-pub fn main<T: Application>(
-    application: &T,
-    draw_handler: fn(u32, u32) -> (),
-    event_handler: fn(u16, u16, i32) -> (),
-) -> i64 {
+pub fn main<T: Application>(application: &'static T) -> i64 {
     unsafe {
+        APPLICATION = Some(application);
         TOUCH_PAD = Some(touch::TouchPad::new());
-        DRAW_HANDLER = Some(draw_handler);
-        EVENT_HANDLER = Some(event_handler);
         return WKMain(draw_handler_wrapper, event_handler_wrapper);
     }
 }

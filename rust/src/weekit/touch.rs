@@ -1,13 +1,4 @@
-// Event instances are sent by the TouchPad.
-#[derive(Copy, Clone)]
-pub struct Event {
-    slot: i32, // A unique integer for tracking a touch.
-    kind: i32, // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
-    x: i32,    // X position on the touchpad.
-    y: i32,    // Y position on the touchpad.
-    sec: i32,  // Time of the touch (seconds).
-    usec: i32, // Time of the touch (sub-second milliseconds).
-}
+use weekit::*;
 
 #[derive(Copy, Clone)]
 pub struct Touch {
@@ -35,7 +26,7 @@ impl Touch {
 // A TouchPad monitors events on a touchscreen.
 pub struct TouchPad {
     touches: [Touch; 10],
-    active_slot: i32,
+    slot: usize,
 }
 
 const EV_SYN: u16 = 0x00;
@@ -49,11 +40,13 @@ const ABS_MT_POSITION_X: u16 = 0x35; /* Center X ellipse position */
 const ABS_MT_POSITION_Y: u16 = 0x36; /* Center Y ellipse position */
 const ABS_MT_TRACKING_ID: u16 = 0x39; /* Unique ID of initiated contact */
 
+const TOUCH_SLOTS: usize = 10;
+
 impl TouchPad {
     pub fn new() -> TouchPad {
         TouchPad {
-            touches: [Touch::new(); 10],
-            active_slot: 0,
+            touches: [Touch::new(); TOUCH_SLOTS],
+            slot: 0,
         }
     }
     pub fn handle(&mut self, t: u16, c: u16, v: i32) {
@@ -66,6 +59,19 @@ impl TouchPad {
     }
     pub fn handle_syn(&mut self, _c: u16, _v: i32) {
         println!("SYN");
+        for slot in 0..TOUCH_SLOTS {
+            let touch = &mut self.touches[slot];
+            if touch.began {
+                let ev = Event::new(slot, 1, touch.position_x, touch.position_y, 0, 0);
+            } else if touch.moved {
+                let ev = Event::new(slot, 2, touch.position_x, touch.position_y, 0, 0);
+            } else if touch.ended {
+                let ev = Event::new(slot, 3, touch.position_x, touch.position_y, 0, 0);
+            }
+            touch.began = true;
+            touch.moved = true;
+            touch.ended = true;
+        }
     }
     pub fn handle_key(&mut self, c: u16, v: i32) {
         if c == 330 {
@@ -88,21 +94,30 @@ impl TouchPad {
         }
     }
     pub fn handle_abs_x(&mut self, v: i32) {
-        self.touches[self.active_slot as usize].position_x = v;
+        self.touches[self.slot].position_x = v;
+        self.touches[self.slot].moved = true;
     }
     pub fn handle_abs_y(&mut self, v: i32) {
-        self.touches[self.active_slot as usize].position_y = v;
+        self.touches[self.slot].position_y = v;
+        self.touches[self.slot].moved = true;
     }
     pub fn handle_mt_slot(&mut self, v: i32) {
-        self.active_slot = v;
+        self.slot = v as usize;
     }
     pub fn handle_mt_position_x(&mut self, v: i32) {
-        self.touches[self.active_slot as usize].position_x = v;
+        self.touches[self.slot].position_x = v;
+        self.touches[self.slot].moved = true;
     }
     pub fn handle_mt_position_y(&mut self, v: i32) {
-        self.touches[self.active_slot as usize].position_y = v;
+        self.touches[self.slot].position_y = v;
+        self.touches[self.slot].moved = true;
     }
     pub fn handle_mt_tracking_id(&mut self, v: i32) {
-        self.touches[self.active_slot as usize].tracking_id = v;
+        self.touches[self.slot].tracking_id = v;
+        if v >= 0 {
+            self.touches[self.slot].began = true;
+        } else {
+            self.touches[self.slot].ended = true;
+        }
     }
 }
