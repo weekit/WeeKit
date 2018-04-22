@@ -64,7 +64,9 @@ impl weekit::Application for Application {
         rect(width as f32 - s - m, height as f32 - s - m, s, s);
     }
 
-    fn event(&self, ev: &weekit::Event) -> () {}
+    fn event(&self, ev: &weekit::Event) -> () {
+	println!("RECEIVED EVENT {:?}", ev);
+    }
 }
 
 static APP: Application = Application {};

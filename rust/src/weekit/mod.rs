@@ -10,7 +10,7 @@ extern crate libc;
 
 use self::openvg::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Event {
     slot: usize, // A unique integer for tracking a touch.
     kind: i32,   // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
