@@ -19,21 +19,27 @@ impl Circle {
     }
 }
 
-struct Application {
+struct Application<'a> {
     event_count: i32,
     circles: [Circle; 10],
+    serif_typeface: Font<'a>,
+    sans_typeface: Font<'a>,
+    sans_mono_typeface: Font<'a>,
 }
 
-impl Application {
-    fn new() -> Application {
+impl<'a> Application<'a> {
+    fn new() -> Application<'a> {
         Application {
             event_count: 0,
             circles: [Circle::new(); 10],
+            serif_typeface: Font::serif(),
+            sans_typeface: Font::sans(),
+            sans_mono_typeface: Font::sans_mono(),
         }
     }
 }
 
-impl weekit::Application for Application {
+impl<'a> weekit::Application for Application<'a> {
     fn draw(&self, width: u32, height: u32) -> () {
         let screen = Screen::new(width, height);
         screen.background(64, 0, 64);
@@ -48,36 +54,32 @@ impl weekit::Application for Application {
         let str_2 = "Helló Világ";
         let str_3 = "Ahoj světe";
 
-        let serif_typeface = Font::serif();
-        let sans_typeface = Font::sans();
-        let sans_mono_typeface = Font::sans_mono();
-
         text_mid(
             width as f32 / 2.0,
             height as f32 * 0.7,
             str_0,
-            &serif_typeface,
+            self.serif_typeface,
             width / 15,
         );
         text_mid(
             width as f32 / 2.0,
             height as f32 * 0.5,
             &str_1,
-            &sans_typeface,
+            &self.sans_typeface,
             width / 15,
         );
         text_mid(
             width as f32 / 2.0,
             height as f32 * 0.3,
             str_2,
-            &sans_mono_typeface,
+            &self.sans_mono_typeface,
             width / 15,
         );
         text_mid(
             width as f32 / 2.0,
             height as f32 * 0.1,
             str_3,
-            &serif_typeface,
+            &self.serif_typeface,
             width / 15,
         );
         stroke_width(1.0);
