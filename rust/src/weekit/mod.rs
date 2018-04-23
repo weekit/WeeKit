@@ -14,12 +14,12 @@ use std::sync::Mutex;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Event {
-    slot: usize, // A unique integer for tracking a touch.
-    kind: i32,   // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
-    x: i32,      // X position on the touchpad.
-    y: i32,      // Y position on the touchpad.
-    sec: i32,
-    usec: i32,
+    pub slot: usize, // A unique integer for tracking a touch.
+    pub kind: i32,   // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
+    pub x: i32,      // X position on the touchpad.
+    pub y: i32,      // Y position on the touchpad.
+    pub sec: i32,
+    pub usec: i32,
 }
 
 impl Event {

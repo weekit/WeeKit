@@ -397,7 +397,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // convert window location into view location
   p = [theEvent locationInWindow];
   p = [self convertPoint: p fromView: nil];
-  p.y = self.frame.size.height - p.y;
+  //p.y = self.frame.size.height - p.y;
 
   int x = (int) p.x;
   int y = (int) p.y;
@@ -425,7 +425,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // convert window location into view location
   p = [theEvent locationInWindow];
   p = [self convertPoint: p fromView: nil];
-  p.y = self.frame.size.height - p.y;
+//  p.y = self.frame.size.height - p.y;
 
   int x = (int) p.x;
   int y = (int) p.y;
