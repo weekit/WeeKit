@@ -81,7 +81,6 @@ typedef void (*WKEventHandler)(short, short, int);
 extern WKEventHandler wkEventHandler;
 
 void getTouchSample(int *rawX, int *rawY, int *rawPressure) {
-
         /* the events (up to 64 at once) */
         struct input_event ev[64];
 
@@ -102,18 +101,12 @@ int start_touches() {
 		perror("error opening touch screen");
 		return -1;
 	}
-
 	int xmax, xmin, ymax, ymin;
 	getTouchScreenDetails(&xmin,&xmax,&ymin,&ymax);
-
-	printf ("X (%d, %d)\n", xmin, xmax);
-	printf ("Y (%d, %d)\n", ymin, ymax);
 	return 0;
 }
 
 void handle_touches() {
-	while(1){
 		int rawX, rawY, rawPressure;
                 getTouchSample(&rawX, &rawY, &rawPressure);
-	}
 }

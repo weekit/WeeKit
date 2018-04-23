@@ -91,7 +91,6 @@ int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
   	wkDrawHandler(w, h);
   	eglSwapBuffers(state->display, state->surface);
 	handle_touches();
-  	usleep(1000);
   }
   egl_finish();
   return 0;

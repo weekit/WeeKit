@@ -96,14 +96,15 @@ impl weekit::Application for Application {
         stroke(255, 255, 255, 1.0);
         for i in 0..10 as usize {
             if self.circles[i].visible {
-                circle(self.circles[i].x as f32, self.circles[i].y as f32, 100.0);
+                circle(self.circles[i].x as f32, 
+	(height as i32 - self.circles[i].y) as f32, 
+	100.0);
             }
         }
     }
 
     fn event(&mut self, ev: &weekit::Event) -> () {
         self.event_count += 1;
-        println!("RECEIVED EVENT {} {:?}", self.event_count, ev);
         if ev.kind == 1 {
             self.circles[ev.slot as usize].visible = true;
         } else if ev.kind == 3 {
