@@ -2,7 +2,15 @@ mod weekit;
 
 use weekit::*;
 
-struct Application {}
+struct Application {
+    event_count: i32,
+}
+
+impl Application {
+    fn new() -> Application {
+        Application { event_count: 0 }
+    }
+}
 
 impl weekit::Application for Application {
     fn draw(&self, width: u32, height: u32) -> () {
@@ -64,13 +72,12 @@ impl weekit::Application for Application {
         rect(width as f32 - s - m, height as f32 - s - m, s, s);
     }
 
-    fn event(&self, ev: &weekit::Event) -> () {
-	println!("RECEIVED EVENT {:?}", ev);
+    fn event(&mut self, ev: &weekit::Event) -> () {
+        self.event_count += 1;
+        println!("RECEIVED EVENT {} {:?}", self.event_count, ev);
     }
 }
 
-static APP: Application = Application {};
-
 fn main() {
-    weekit::main(&APP);
+    weekit::main(Application::new());
 }

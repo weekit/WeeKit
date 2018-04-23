@@ -9,6 +9,8 @@ pub mod touch;
 extern crate libc;
 
 use self::openvg::*;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Event {
@@ -16,8 +18,8 @@ pub struct Event {
     kind: i32,   // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
     x: i32,      // X position on the touchpad.
     y: i32,      // Y position on the touchpad.
-    sec: i32,    // Time of the event (seconds).
-    usec: i32,   // Time of the event (sub-second milliseconds).
+    sec: i32,
+    usec: i32,
 }
 
 impl Event {
@@ -40,17 +42,23 @@ extern "C" {
 
 pub trait Application {
     fn draw(&self, width: u32, height: u32) -> ();
-    fn event(&self, event: &Event) -> ();
+    fn event(&mut self, event: &Event) -> ();
 }
 
-static mut APPLICATION: Option<&Application> = None;
+static mut APPLICATION: Option<Arc<Mutex<Application>>> = None;
 
 static mut TOUCH_PAD: Option<touch::TouchPad> = None;
+
+fn draw(x: Arc<Mutex<Application>>, width: u32, height: u32) {
+    let d = x.clone();
+    let app = d.lock().unwrap();
+    app.draw(width, height);
+}
 
 extern "C" fn draw_handler_wrapper(width: u32, height: u32) -> () {
     unsafe {
         match APPLICATION {
-            Some(app) => app.draw(width, height),
+            Some(ref app) => draw(app.clone(), width, height),
             None => {}
         }
     }
@@ -59,16 +67,16 @@ extern "C" fn draw_handler_wrapper(width: u32, height: u32) -> () {
 extern "C" fn event_handler_wrapper(t: u16, c: u16, v: i32) -> () {
     unsafe {
         match TOUCH_PAD {
-            Some(ref mut touchpad) => touchpad.handle(t, c, v),
+            Some(ref mut touchpad) => touchpad.handle(t, c, v, APPLICATION.clone()),
             None => {}
         }
     }
 }
 
 // main should be called from client applications to run the main event loop.
-pub fn main<T: Application>(application: &'static T) -> i64 {
+pub fn main<T: Application + 'static>(application: T) -> i64 {
     unsafe {
-        APPLICATION = Some(application);
+        APPLICATION = Some(Arc::new(Mutex::new(application)));
         TOUCH_PAD = Some(touch::TouchPad::new());
         return WKMain(draw_handler_wrapper, event_handler_wrapper);
     }
