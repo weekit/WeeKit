@@ -41,7 +41,7 @@ extern "C" {
 }
 
 pub trait Application {
-    fn draw(&self, width: u32, height: u32) -> ();
+    fn draw(&mut self, width: u32, height: u32) -> ();
     fn event(&mut self, event: &Event) -> ();
 }
 
@@ -51,7 +51,7 @@ static mut TOUCH_PAD: Option<touch::TouchPad> = None;
 
 fn draw(x: Arc<Mutex<Application>>, width: u32, height: u32) {
     let d = x.clone();
-    let app = d.lock().unwrap();
+    let mut app = d.lock().unwrap();
     app.draw(width, height);
 }
 
@@ -202,7 +202,7 @@ impl<'a> Font<'a> {
     }
 
     // serif creates a deja_vu_serif font.
-    pub fn serif() -> Font<'static> {
+    pub fn serif() -> Font<'a> {
         Font::new(
             &deja_vu_serif::GLYPH_POINTS,
             &deja_vu_serif::GLYPH_POINT_INDICES,
@@ -218,7 +218,7 @@ impl<'a> Font<'a> {
     }
 
     // sans creates a deja_vu_sans font.
-    pub fn sans() -> Font<'static> {
+    pub fn sans() -> Font<'a> {
         Font::new(
             &deja_vu_sans::GLYPH_POINTS,
             &deja_vu_sans::GLYPH_POINT_INDICES,
@@ -234,7 +234,7 @@ impl<'a> Font<'a> {
     }
 
     // sans_mono creates a deja_vu_sans_mono font.
-    pub fn sans_mono() -> Font<'static> {
+    pub fn sans_mono() -> Font<'a> {
         Font::new(
             &deja_vu_sans_mono::GLYPH_POINTS,
             &deja_vu_sans_mono::GLYPH_POINT_INDICES,
