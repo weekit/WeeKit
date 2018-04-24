@@ -1,6 +1,7 @@
 mod weekit;
 
 use weekit::*;
+use weekit::font::Font;
 
 #[derive(Copy, Clone)]
 struct Circle {
