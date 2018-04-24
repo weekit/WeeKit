@@ -133,7 +133,7 @@ impl<'a> Application for Demo<'a> {
         }
     }
 
-    fn event(&mut self, ev: &input::Event) -> () {
+    fn input(&mut self, ev: &event::Event) -> () {
         self.event_count += 1;
         if ev.kind == 1 {
             self.circles[ev.slot as usize].visible = true;

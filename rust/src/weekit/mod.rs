@@ -1,28 +1,27 @@
 #![allow(dead_code)]
 
-mod openvg;
-
-pub mod input;
-pub mod font;
 pub mod display;
 pub mod draw;
+pub mod event;
+pub mod font;
 
-extern crate libc;
+mod input;
+mod openvg;
 
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
+// applications should implement the Application trait.
 pub trait Application {
     fn draw(&mut self, width: u32, height: u32) -> ();
-    fn event(&mut self, event: &input::Event) -> ();
+    fn input(&mut self, event: &event::Event) -> ();
 }
 
 // main should be called from client applications to run the main event loop.
 pub fn main<T: Application + 'static>(application: T) -> i64 {
     unsafe {
         APPLICATION = Some(Arc::new(Mutex::new(application)));
-        TOUCH_PAD = Some(input::TouchPad::new());
-        return WKMain(draw_handler_wrapper, event_handler_wrapper);
+        INPUT_LISTENER = Some(input::Listener::new());
+        return WKMain(draw_handler, input_handler);
     }
 }
 
@@ -33,27 +32,27 @@ extern "C" {
 
 static mut APPLICATION: Option<Arc<Mutex<Application>>> = None;
 
-static mut TOUCH_PAD: Option<input::TouchPad> = None;
-
-fn draw(x: Arc<Mutex<Application>>, width: u32, height: u32) {
-    let d = x.clone();
-    let mut app = d.lock().unwrap();
-    app.draw(width, height);
-}
-
-extern "C" fn draw_handler_wrapper(width: u32, height: u32) -> () {
+extern "C" fn draw_handler(width: u32, height: u32) -> () {
     unsafe {
         match APPLICATION {
-            Some(ref app) => draw(app.clone(), width, height),
+            Some(ref arc) => {
+                let arc = arc.clone();
+                arc.lock().unwrap().draw(width, height);
+            }
             None => {}
         }
     }
 }
 
-extern "C" fn event_handler_wrapper(t: u16, c: u16, v: i32) -> () {
+static mut INPUT_LISTENER: Option<input::Listener> = None;
+
+extern "C" fn input_handler(t: u16, c: u16, v: i32) -> () {
     unsafe {
-        match TOUCH_PAD {
-            Some(ref mut touchpad) => touchpad.handle(t, c, v, APPLICATION.clone()),
+        match INPUT_LISTENER {
+            Some(ref mut listener) => match APPLICATION {
+                Some(ref arc) => listener.handle(t, c, v, arc.clone()),
+                None => {}
+            },
             None => {}
         }
     }

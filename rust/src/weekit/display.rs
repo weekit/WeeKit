@@ -7,12 +7,11 @@ pub struct Screen {
 }
 
 impl Screen {
-	
     // new creates a new Screen.
     pub fn new(w: u32, h: u32) -> Screen {
         let screen = Screen { w: w, h: h };
         screen.background(255, 255, 255);
-		draw::reset();
+        draw::reset();
         unsafe {
             vgLoadIdentity();
         }

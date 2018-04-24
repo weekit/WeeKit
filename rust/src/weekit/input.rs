@@ -1,34 +1,11 @@
 use weekit::*;
+use weekit::event::*;
 
 use std::sync::Arc;
 use std::sync::Mutex;
 
-#[derive(Copy, Clone, Debug)]
-pub struct Event {
-    pub slot: usize, // A unique integer for tracking a touch.
-    pub kind: i32,   // 1 = TouchDown, 2 = TouchMoved, 3 = TouchEnded
-    pub x: i32,      // X position on the touchpad.
-    pub y: i32,      // Y position on the touchpad.
-    pub sec: i32,
-    pub usec: i32,
-}
-
-impl Event {
-    pub fn new(slot: usize, kind: i32, x: i32, y: i32, sec: i32, usec: i32) -> Event {
-        Event {
-            slot: slot,
-            kind: kind,
-            x: x,
-            y: y,
-            sec: sec,
-            usec: usec,
-        }
-    }
-}
-
-
 #[derive(Copy, Clone)]
-pub struct Touch {
+struct Touch {
     tracking_id: i32,
     position_x: i32,
     position_y: i32,
@@ -38,7 +15,7 @@ pub struct Touch {
 }
 
 impl Touch {
-    pub fn new() -> Touch {
+    fn new() -> Touch {
         Touch {
             tracking_id: 0,
             position_x: 0,
@@ -50,8 +27,8 @@ impl Touch {
     }
 }
 
-// A TouchPad monitors events on a touchscreen.
-pub struct TouchPad {
+// A Listener monitors events on a touchscreen.
+pub struct Listener {
     touches: [Touch; 10],
     slot: usize,
 }
@@ -69,14 +46,14 @@ const ABS_MT_TRACKING_ID: u16 = 0x39; /* Unique ID of initiated contact */
 
 const TOUCH_SLOTS: usize = 10;
 
-impl TouchPad {
-    pub fn new() -> TouchPad {
-        TouchPad {
+impl Listener {
+    pub fn new() -> Listener {
+        Listener {
             touches: [Touch::new(); TOUCH_SLOTS],
             slot: 0,
         }
     }
-    pub fn handle(&mut self, t: u16, c: u16, v: i32, app: Option<Arc<Mutex<Application>>>) {
+    pub fn handle(&mut self, t: u16, c: u16, v: i32, app: Arc<Mutex<Application>>) {
         match t {
             EV_SYN => self.handle_syn(c, v, app),
             EV_KEY => self.handle_key(c, v),
@@ -84,7 +61,7 @@ impl TouchPad {
             _ => {}
         }
     }
-    pub fn handle_syn(&mut self, _c: u16, _v: i32, app: Option<Arc<Mutex<Application>>>) {
+    fn handle_syn(&mut self, _c: u16, _v: i32, app: Arc<Mutex<Application>>) {
         for slot in 0..TOUCH_SLOTS {
             let touch = &self.touches[slot];
             if touch.began {
@@ -105,7 +82,7 @@ impl TouchPad {
             touch.ended = false;
         }
     }
-    pub fn handle_key(&mut self, c: u16, v: i32) {
+    fn handle_key(&mut self, c: u16, v: i32) {
         if c == 330 {
             if v == 0 {
                 self.touches[self.slot].ended = true;
@@ -114,7 +91,7 @@ impl TouchPad {
             }
         }
     }
-    pub fn handle_abs(&mut self, c: u16, v: i32) {
+    fn handle_abs(&mut self, c: u16, v: i32) {
         match c {
             ABS_X => self.handle_abs_x(v),
             ABS_Y => self.handle_abs_y(v),
@@ -125,26 +102,26 @@ impl TouchPad {
             _ => {}
         }
     }
-    pub fn handle_abs_x(&mut self, v: i32) {
+    fn handle_abs_x(&mut self, v: i32) {
         self.touches[self.slot].position_x = v;
         self.touches[self.slot].moved = true;
     }
-    pub fn handle_abs_y(&mut self, v: i32) {
+    fn handle_abs_y(&mut self, v: i32) {
         self.touches[self.slot].position_y = v;
         self.touches[self.slot].moved = true;
     }
-    pub fn handle_mt_slot(&mut self, v: i32) {
+    fn handle_mt_slot(&mut self, v: i32) {
         self.slot = v as usize;
     }
-    pub fn handle_mt_position_x(&mut self, v: i32) {
+    fn handle_mt_position_x(&mut self, v: i32) {
         self.touches[self.slot].position_x = v;
         self.touches[self.slot].moved = true;
     }
-    pub fn handle_mt_position_y(&mut self, v: i32) {
+    fn handle_mt_position_y(&mut self, v: i32) {
         self.touches[self.slot].position_y = v;
         self.touches[self.slot].moved = true;
     }
-    pub fn handle_mt_tracking_id(&mut self, v: i32) {
+    fn handle_mt_tracking_id(&mut self, v: i32) {
         self.touches[self.slot].tracking_id = v;
         if v >= 0 {
             self.touches[self.slot].began = true;
@@ -152,15 +129,8 @@ impl TouchPad {
             self.touches[self.slot].ended = true;
         }
     }
-    pub fn send(&self, ev: &Event, app: Option<Arc<Mutex<Application>>>) {
-        match app {
-            Some(app) => self.send2(ev, app),
-            None => {}
-        }
-    }
-    pub fn send2(&self, ev: &Event, app: Arc<Mutex<Application>>) {
-        let app = app.clone();
-        let mut d1 = app.lock().unwrap();
-        d1.event(ev);
+    fn send(&self, ev: &Event, arc: Arc<Mutex<Application>>) {
+        let arc = arc.clone();
+        arc.lock().unwrap().input(ev);
     }
 }
