@@ -14,11 +14,15 @@
 #define LONG(x) ((x)/BITS_PER_LONG)
 #define test_bit(bit, array)	((array[LONG(bit)] >> OFF(bit)) & 1)
 
-int fd;
+int touchscreen;
+int keyboard;
 
-int openTouchScreen()
+int openInputs()
 {
-        if ((fd = open("/dev/input/event1", O_RDONLY)) < 0) {
+        if ((touchscreen = open("/dev/input/touchscreen", O_RDONLY)) < 0) {
+                return 1;
+        }
+        if ((keyboard = open("/dev/input/keyboard", O_RDONLY)) < 0) {
                 return 1;
         }
 	return 0;
@@ -26,8 +30,7 @@ int openTouchScreen()
 
 char *absval[6] = { "Value", "Min", "Max", "Fuzz", "Flat", "Resolution"};
 
-void getTouchScreenDetails(int *xmin,int *xmax,int *ymin,int *ymax)
-{
+void getInputDetails(int fd) {
 	unsigned short id[4];
         unsigned long bit[EV_MAX][NBITS(KEY_MAX)];
         char name[256] = "Unknown";
@@ -45,6 +48,8 @@ void getTouchScreenDetails(int *xmin,int *xmax,int *ymin,int *ymax)
         ioctl(fd, EVIOCGBIT(0, EV_MAX), bit[0]);
         printf("Supported events:\n");
 
+	int xmin, xmax, ymin, ymax;
+
         int i,j,k;
         for (i = 0; i < EV_MAX; i++) {
                 if (test_bit(i, bit[0])) {
@@ -60,12 +65,12 @@ void getTouchScreenDetails(int *xmin,int *xmax,int *ymin,int *ymax)
                                                         if ((k < 3) || abs[k]){
                                                                 printf("     %s %d\n", absval[k], abs[k]);
                                                                 if (j == 0){
-                                                                        if (k == 1) *xmin =  abs[k];
-                                                                        if (k == 2) *xmax =  abs[k];
+                                                                        if (k == 1) xmin =  abs[k];
+                                                                        if (k == 2) xmax =  abs[k];
                                                                 }
                                                                 if (j == 1){
-                                                                        if (k == 1) *ymin =  abs[k];
-                                                                        if (k == 2) *ymax =  abs[k];
+                                                                        if (k == 1) ymin =  abs[k];
+                                                                        if (k == 2) ymax =  abs[k];
                                                                 }
                                                         }
                                                 }
@@ -80,7 +85,28 @@ void getTouchScreenDetails(int *xmin,int *xmax,int *ymin,int *ymax)
 typedef void (*WKEventHandler)(short, short, int);
 extern WKEventHandler wkEventHandler;
 
-void getTouchSample(int *rawX, int *rawY, int *rawPressure) {
+unsigned char has_inputs(int fd) {
+	fd_set rfds;
+        FD_ZERO(&rfds);
+        FD_SET(fd, &rfds);
+
+        struct timeval tv;
+	// don't wait
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
+
+        int retval = select(fd + 1, &rfds, NULL, NULL, &tv);
+        /* Don't rely on the value of tv now! */
+
+        if (retval == -1) {
+        	perror("select()");
+        } else if (retval) {
+		return 1; /* FD_ISSET(fd, &rfds) will be true. */
+	}
+	return 0;
+}
+
+void handle_inputs(int fd) {
         /* the events (up to 64 at once) */
         struct input_event ev[64];
 
@@ -96,17 +122,22 @@ void getTouchSample(int *rawX, int *rawY, int *rawPressure) {
 	}
 }
 
-int start_touches() {
-	if (openTouchScreen() == 1) {
+void handle_input() {
+  if (has_inputs(touchscreen)) {
+    handle_inputs(touchscreen);
+  }
+  if (has_inputs(keyboard)) {
+    handle_inputs(keyboard);
+  }
+}
+
+int start_input() {
+	if (openInputs() == 1) {
 		perror("error opening touch screen");
 		return -1;
 	}
-	int xmax, xmin, ymax, ymin;
-	getTouchScreenDetails(&xmin,&xmax,&ymin,&ymax);
+	getInputDetails(touchscreen);
+	getInputDetails(keyboard);
 	return 0;
 }
 
-void handle_touches() {
-		int rawX, rawY, rawPressure;
-                getTouchSample(&rawX, &rawY, &rawPressure);
-}

@@ -2,6 +2,9 @@
 
 all:	app
 
+run:	all
+	rust/target/debug/demo	
+
 libwee.so:	src/platform_pi.c src/touches_pi.c
 	clang src/platform_pi.c src/touches_pi.c \
 		-g \
@@ -13,6 +16,7 @@ libwee.so:	src/platform_pi.c src/touches_pi.c
 		-shared -fpic \
 		-ljpeg \
 		-o libwee.so
+	sudo cp libwee.so /usr/lib
 
 app:	libwee.so
 	# Build and install the main (Rust) binary.

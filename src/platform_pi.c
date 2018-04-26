@@ -74,8 +74,8 @@ typedef void (*WKEventHandler)(short, short, int);
 WKDrawHandler wkDrawHandler;
 WKEventHandler wkEventHandler;
 
-int start_touches();
-void handle_touches();
+int start_input();
+void handle_input();
 
 int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
   wkDrawHandler = drawHandler;
@@ -84,13 +84,13 @@ int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
   int w, h;
   egl_init(&w, &h);
 
-  start_touches();
+  start_input();
 
   unsigned char running = 0x01;
   while(running) {
   	wkDrawHandler(w, h);
   	eglSwapBuffers(state->display, state->surface);
-	handle_touches();
+	handle_input();
   }
   egl_finish();
   return 0;

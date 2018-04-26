@@ -44,6 +44,8 @@ const ABS_MT_POSITION_X: u16 = 0x35; /* Center X ellipse position */
 const ABS_MT_POSITION_Y: u16 = 0x36; /* Center Y ellipse position */
 const ABS_MT_TRACKING_ID: u16 = 0x39; /* Unique ID of initiated contact */
 
+const BTN_TOUCH: u16 = 0x14a;
+
 const TOUCH_SLOTS: usize = 10;
 
 impl Listener {
@@ -83,13 +85,15 @@ impl Listener {
         }
     }
     fn handle_key(&mut self, c: u16, v: i32) {
-        if c == 330 {
+        if c == BTN_TOUCH {
             if v == 0 {
                 self.touches[self.slot].ended = true;
             } else if v == 1 {
                 self.touches[self.slot].began = true;
             }
-        }
+        } else {
+	    println!("Key {} Value {}", c, v);
+	}
     }
     fn handle_abs(&mut self, c: u16, v: i32) {
         match c {
