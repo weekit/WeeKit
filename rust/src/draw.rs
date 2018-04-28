@@ -1,5 +1,5 @@
-use weekit::openvg::*;
-use weekit::font::*;
+use openvg::*;
+use font::*;
 
 pub fn reset() {
     fill(0, 0, 0, 1.0);

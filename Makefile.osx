@@ -38,8 +38,8 @@ app: libwee.dylib
 	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib Demo.app/Contents/dylibs
 	cp libwee.dylib Demo.app/Contents/dylibs/libwee.dylib
 	# Build and install the main (Rust) binary.
-	cd rust; cargo build
-	cp rust/target/debug/demo Demo.app/Contents/MacOS/Demo
+	cd rust; cargo build --example hello
+	cp rust/target/debug/examples/hello Demo.app/Contents/MacOS/Demo
 	install_name_tool -add_rpath "@executable_path/../dylibs" Demo.app/Contents/MacOS/Demo
 
 clean:

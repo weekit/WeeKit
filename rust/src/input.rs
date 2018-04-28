@@ -1,5 +1,5 @@
-use weekit::*;
-use weekit::event::*;
+use event::*;
+use Application;
 
 use std::sync::Arc;
 use std::sync::Mutex;

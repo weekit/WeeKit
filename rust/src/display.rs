@@ -1,5 +1,5 @@
-use weekit::openvg::*;
-use weekit::*;
+use openvg::*;
+use draw;
 
 pub struct Screen {
     w: u32,

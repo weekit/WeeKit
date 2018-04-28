@@ -2,7 +2,7 @@ mod deja_vu_serif;
 mod deja_vu_sans;
 mod deja_vu_sans_mono;
 
-use weekit::openvg::*;
+use super::openvg::*;
 
 pub struct Font<'a> {
     pub character_map: &'a [i16],

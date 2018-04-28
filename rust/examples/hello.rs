@@ -1,4 +1,4 @@
-mod weekit;
+extern crate weekit;
 
 use weekit::*;
 

@@ -1,5 +1,5 @@
 [package]
-name = "demo"
+name = "weekit"
 version = "0.1.0"
 authors = ["Tim Burks <timburks@google.com>"]
 
