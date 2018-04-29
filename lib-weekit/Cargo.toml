@@ -1,0 +1,8 @@
+[package]
+name = "weekit"
+version = "0.1.0"
+authors = ["Tim Burks <timburks@google.com>"]
+
+[dependencies]
+libc = "0.2.0"
+quick-xml = "0.12.0"

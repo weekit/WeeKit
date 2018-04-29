@@ -38,10 +38,11 @@ app: libwee.dylib
 	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib Demo.app/Contents/dylibs
 	cp libwee.dylib Demo.app/Contents/dylibs/libwee.dylib
 	# Build and install the main (Rust) binary.
-	cd rust; cargo build --example hello
-	cp rust/target/debug/examples/hello Demo.app/Contents/MacOS/Demo
+	cd lib-weekit; cargo build --example hello
+	cp lib-weekit/target/debug/examples/hello Demo.app/Contents/MacOS/Demo
 	install_name_tool -add_rpath "@executable_path/../dylibs" Demo.app/Contents/MacOS/Demo
 
 clean:
-	cd rust; cargo clean
+	cd lib-weekit; cargo clean
+	cd lib-svgkit; cargo clean
 	rm -rf Demo.app *.dSYM libwee.dylib
