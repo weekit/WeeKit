@@ -4,6 +4,8 @@ SDK=~/Desktop/amanithvg-sdk
 
 APP=Demo.app
 
+EXAMPLE=life
+
 all:	app
 
 libs:	lib/libAmanithVG.4.dylib lib/libplatform.dylib
@@ -46,8 +48,8 @@ app: libs
 	cp platform/osx/tutorial.icns ${APP}/Contents/Resources
 	cp lib/*.dylib ${APP}/Contents/dylibs
 	# Build and install the main (Rust) binary.
-	cd lib-weekit; cargo build --example hello
-	cp lib-weekit/target/debug/examples/hello ${APP}/Contents/MacOS/Demo
+	cd lib-weekit; cargo build --example ${EXAMPLE}
+	cp lib-weekit/target/debug/examples/${EXAMPLE} ${APP}/Contents/MacOS/Demo
 	install_name_tool -add_rpath "@executable_path/../dylibs" ${APP}/Contents/MacOS/Demo
 
 clean:
