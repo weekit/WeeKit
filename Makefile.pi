@@ -2,11 +2,13 @@
 
 all:	app
 
-run:	all
-	rust/target/debug/demo	
+libs:	lib/libplatform.so
 
-libwee.so:	src/platform_pi.c src/touches_pi.c
-	clang src/platform_pi.c src/touches_pi.c \
+lib/libplatform.so:	platform/pi/platform.c platform/pi/inputs.c
+	mkdir -p lib
+	clang \
+		platform/pi/platform.c \
+		platform/pi/inputs.c \
 		-g \
 		-I /opt/vc/include \
 		-I /usr/local/include \
@@ -15,13 +17,12 @@ libwee.so:	src/platform_pi.c src/touches_pi.c
 		-lobjc \
 		-shared -fpic \
 		-ljpeg \
-		-o libwee.so
-	sudo cp libwee.so /usr/lib
+		-o lib/libplatform.so
+	sudo cp lib/libplatform.so /usr/lib
 
-app:	libwee.so
-	# Build and install the main (Rust) binary.
-	cd rust; cargo build
+app:	libs
+	cd lib-weekit; cargo build --example hello
 
 clean:
-	cd rust; cargo clean
-	rm -rf libwee.so
+	cd lib-weekit; cargo clean
+	rm -rf lib
