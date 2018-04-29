@@ -2,7 +2,7 @@
 
 SDK=~/Desktop/amanithvg-sdk
 
-APP=../Demo.app
+APP=Demo.app
 
 all:	app
 
@@ -12,12 +12,12 @@ lib/libAmanithVG.4.dylib: ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dyl
 	mkdir -p lib
 	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib lib
 
-lib/libplatform.dylib: src/shapes.c src/platform_osx.m
+lib/libplatform.dylib: platform/common/shapes.c platform/osx/platform.m
 	mkdir -p lib
 	# Build libplatform.
 	clang \
-		src/shapes.c \
-		src/platform_osx.m \
+		platform/common/shapes.c \
+		platform/osx/platform.m \
 		-g \
 		-I ${SDK}/include \
 		-L ${SDK}/lib/macosx/ub/gle/standalone \
@@ -42,15 +42,15 @@ app: libs
 	mkdir -p ${APP}/Contents/MacOS
 	mkdir -p ${APP}/Contents/dylibs
 	mkdir -p ${APP}/Contents/Resources
-	cp resources/osx/Info.plist ${APP}/Contents
-	cp resources/osx/tutorial.icns ${APP}/Contents/Resources
+	cp platform/osx/Info.plist ${APP}/Contents
+	cp platform/osx/tutorial.icns ${APP}/Contents/Resources
 	cp lib/*.dylib ${APP}/Contents/dylibs
 	# Build and install the main (Rust) binary.
-	cd ../lib-weekit; cargo build --example hello
-	cp ../lib-weekit/target/debug/examples/hello ${APP}/Contents/MacOS/Demo
+	cd lib-weekit; cargo build --example hello
+	cp lib-weekit/target/debug/examples/hello ${APP}/Contents/MacOS/Demo
 	install_name_tool -add_rpath "@executable_path/../dylibs" ${APP}/Contents/MacOS/Demo
 
 clean:
-	cd ../lib-weekit; cargo clean
-	cd ../lib-svgkit; cargo clean
+	cd lib-weekit; cargo clean
+	cd lib-svgkit; cargo clean
 	rm -rf ${APP} lib
