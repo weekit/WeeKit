@@ -25,4 +25,5 @@ app:	libs
 
 clean:
 	cd lib-weekit; cargo clean
+	cd lib-svgkit; cargo clean
 	rm -rf lib
