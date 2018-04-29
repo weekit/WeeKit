@@ -25,7 +25,6 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
     }
 }
 
-#[link(name = "wee")]
 extern "C" {
     fn WKMain(f: extern "C" fn(u32, u32) -> (), e: extern "C" fn(u16, u16, i32) -> ()) -> i64;
 }
