@@ -3,11 +3,11 @@ extern crate weekit;
 
 use weekit::*;
 
-use std::cmp;
-use rand::{thread_rng, Rng};
+use rand::Rng;
 
-const W: usize = 50;
-const H: usize = 30;
+const S: usize = 10;
+const W: usize = 5*S;
+const H: usize = 3*S;
 
 struct Life {
     touch_count: u32,
