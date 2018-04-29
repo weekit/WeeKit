@@ -92,8 +92,8 @@ impl Listener {
                 self.touches[self.slot].began = true;
             }
         } else {
-	    println!("Key {} Value {}", c, v);
-	}
+            println!("Key {} Value {}", c, v);
+        }
     }
     fn handle_abs(&mut self, c: u16, v: i32) {
         match c {

@@ -29,7 +29,7 @@ impl<'a> Application for Demo<'a> {
         let screen = display::Screen::new(width, height);
         screen.background((self.touch_count * 4) % 256, 0, 0);
 
-        draw::fill(44, 77, (128 + 4*self.touch_count) % 256, 1.0); // Big blue marble
+        draw::fill(44, 77, (128 + 4 * self.touch_count) % 256, 1.0); // Big blue marble
         draw::circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"
 
         draw::fill(255, 255, 255, 1.0); // White text

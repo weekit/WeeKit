@@ -134,7 +134,7 @@ impl<'a> Application for Demo<'a> {
     }
 
     fn input(&mut self, ev: &event::Event) -> () {
-println!("input");
+        println!("input");
         self.event_count += 1;
         if ev.kind == 1 {
             self.circles[ev.slot as usize].visible = true;
