@@ -6,11 +6,12 @@ use weekit::*;
 use std::cmp;
 use rand::{thread_rng, Rng};
 
-const S: usize = 200;
+const W: usize = 50;
+const H: usize = 30;
 
 struct Life {
     touch_count: u32,
-    grid: [[[bool; S]; S]; 2],
+    grid: [[[bool; H]; W]; 2],
     page: usize,
 }
 
@@ -18,14 +19,14 @@ impl Life {
     fn new() -> Life {
         let mut life = Life {
             touch_count: 0,
-            grid: [[[false; S]; S]; 2],
+            grid: [[[false; H]; W]; 2],
             page: 0,
         };
         // thread_rng is often the most convenient source of randomness:
         let mut rng = rand::thread_rng();
         for page in 0..1 {
-            for j in 0..S {
-                for i in 0..S {
+            for j in 0..H {
+                for i in 0..W {
                     let x: f64 = rng.gen(); // random number in range (0, 1)
                     life.grid[page][i][j] = x < 0.1;
                 }
@@ -36,8 +37,8 @@ impl Life {
     fn update(&mut self) -> () {
         let next = 1 - self.page;
 
-        for j in 0..S {
-            for i in 0..S {
+        for j in 0..H {
+            for i in 0..W {
                 let is_live = self.grid[self.page][i][j];
                 let mut live_neighbors = 0;
                 for di in 0..3 {
@@ -45,15 +46,15 @@ impl Life {
                         if di != 1 || dj != 1 {
                             let mut ii: i32 = i as i32 + di - 1;
                             if ii < 0 {
-                                ii += S as i32;
-                            } else if ii >= S as i32 {
-                                ii -= S as i32;
+                                ii += W as i32;
+                            } else if ii >= W as i32 {
+                                ii -= W as i32;
                             }
                             let mut jj: i32 = j as i32 + dj - 1;
                             if jj < 0 {
-                                jj += S as i32;
-                            } else if jj >= S as i32 {
-                                jj -= S as i32;
+                                jj += H as i32;
+                            } else if jj >= H as i32 {
+                                jj -= H as i32;
                             }
                             if self.grid[self.page][ii as usize][jj as usize] {
                                 live_neighbors += 1;
@@ -84,28 +85,26 @@ impl Application for Life {
         let screen = display::Screen::new(width, height);
         screen.background(64, 0, 0);
 
-        // define a square in the middle of the screen
-        let s = cmp::min(width, height) as f32 * 0.9;
-        let x0 = 0.5 * (width as f32 - s);
-        let y0 = 0.5 * (height as f32 - s);
-        let w = s;
-        let h = s;
+        // define a rectangle in the middle of the screen
+        let cw = width as f32 / W as f32;
+        let ch = height as f32 / H as f32;
+        let x0 = 0.5 * (width as f32 - cw * W as f32);
+        let y0 = 0.5 * (height as f32 - ch * H as f32);
 
         // draw the square
         draw::fill(32, 32, 32, 1.0);
-        draw::rect(x0, y0, w, h);
+        draw::rect(x0, y0, cw * W as f32, ch * H as f32);
 
         // draw a grid of inset squares
         draw::fill(255, 255, 255, 1.0);
 
-        let ww = w / S as f32;
-        let inset = ww * 0.2;
-        for j in 0..S {
-            let yj = y0 + j as f32 * ww;
-            for i in 0..S {
+        let inset = cw * 0.1;
+        for j in 0..H {
+            let yj = y0 + j as f32 * ch;
+            for i in 0..W {
                 if self.grid[self.page][i][j] {
-                    let xi = x0 + i as f32 * ww;
-                    draw::rect(xi + inset, yj + inset, ww - inset * 2.0, ww - inset * 2.0);
+                    let xi = x0 + i as f32 * cw;
+                    draw::rect(xi + inset, yj + inset, cw - inset * 2.0, ch - inset * 2.0);
                 }
             }
         }
