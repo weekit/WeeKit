@@ -6,7 +6,14 @@ APP=../Demo.app
 
 all:	app
 
-libplatform.dylib: src/shapes.c src/platform_osx.m
+libs:	lib/libAmanithVG.4.dylib lib/libplatform.dylib
+
+lib/libAmanithVG.4.dylib: ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib
+	mkdir -p lib
+	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib lib
+
+lib/libplatform.dylib: src/shapes.c src/platform_osx.m
+	mkdir -p lib
 	# Build libplatform.
 	clang \
 		src/shapes.c \
@@ -27,18 +34,17 @@ libplatform.dylib: src/shapes.c src/platform_osx.m
 		-framework OpenGL \
 		-shared \
 		-fpic \
-		-o libplatform.dylib
-	install_name_tool -id "@rpath/../dylibs/libplatform.dylib" libplatform.dylib 
+		-o lib/libplatform.dylib
+	install_name_tool -id "@rpath/../dylibs/libplatform.dylib" lib/libplatform.dylib 
 
-app: libplatform.dylib
+app: libs
 	# Build the .app bundle.
 	mkdir -p ${APP}/Contents/MacOS
 	mkdir -p ${APP}/Contents/dylibs
 	mkdir -p ${APP}/Contents/Resources
 	cp resources/osx/Info.plist ${APP}/Contents
 	cp resources/osx/tutorial.icns ${APP}/Contents/Resources
-	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib ${APP}/Contents/dylibs
-	cp libplatform.dylib ${APP}/Contents/dylibs/libplatform.dylib
+	cp lib/*.dylib ${APP}/Contents/dylibs
 	# Build and install the main (Rust) binary.
 	cd ../lib-weekit; cargo build --example hello
 	cp ../lib-weekit/target/debug/examples/hello ${APP}/Contents/MacOS/Demo
@@ -47,4 +53,4 @@ app: libplatform.dylib
 clean:
 	cd ../lib-weekit; cargo clean
 	cd ../lib-svgkit; cargo clean
-	rm -rf ${APP} *.dSYM libplatform.dylib
+	rm -rf ${APP} lib
