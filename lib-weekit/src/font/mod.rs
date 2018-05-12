@@ -1,9 +1,12 @@
+//! Representation of OpenVG fonts.
+
 mod deja_vu_serif;
 mod deja_vu_sans;
 mod deja_vu_sans_mono;
 
 use super::openvg::*;
 
+/// Represents an OpenVG font.
 pub struct Font<'a> {
     pub character_map: &'a [i16],
     pub glyph_advances: &'a [i32],
@@ -22,7 +25,7 @@ impl<'a> Drop for Font<'a> {
 }
 
 impl<'a> Font<'a> {
-    // new creates a new Font.
+    /// Creates a new Font.
     pub fn new(
         glyph_points: &'a [VGfloat],
         glyph_point_indices: &'a [i32],
@@ -71,7 +74,7 @@ impl<'a> Font<'a> {
         }
     }
 
-    // serif creates a deja_vu_serif font.
+    /// Creates a deja_vu_serif font.
     pub fn serif() -> Font<'a> {
         Font::new(
             &deja_vu_serif::GLYPH_POINTS,
@@ -87,7 +90,7 @@ impl<'a> Font<'a> {
         )
     }
 
-    // sans creates a deja_vu_sans font.
+    /// Creates a deja_vu_sans font.
     pub fn sans() -> Font<'a> {
         Font::new(
             &deja_vu_sans::GLYPH_POINTS,
@@ -103,7 +106,7 @@ impl<'a> Font<'a> {
         )
     }
 
-    // sans_mono creates a deja_vu_sans_mono font.
+    /// Creates a deja_vu_sans_mono font.
     pub fn sans_mono() -> Font<'a> {
         Font::new(
             &deja_vu_sans_mono::GLYPH_POINTS,

@@ -10,13 +10,16 @@ mod openvg;
 
 use std::sync::{Arc, Mutex};
 
-// applications should implement the Application trait.
+/// Specifies required application capabilities.
 pub trait Application {
+    /// Draws the current application screen.
     fn draw(&mut self, width: u32, height: u32) -> ();
+
+    /// Handles user input to the application.
     fn input(&mut self, event: &event::Event) -> ();
 }
 
-// main should be called from client applications to run the main event loop.
+/// Starts the application and runs the main event loop.
 pub fn main<T: Application + 'static>(application: T) -> i64 {
     unsafe {
         APPLICATION = Some(Arc::new(Mutex::new(application)));

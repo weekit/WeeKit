@@ -1,13 +1,16 @@
+//! Utilities for drawing text and shapes.
+
 use openvg::*;
 use font::*;
 
+/// Resets drawing colors to black and stroke width to zero.
 pub fn reset() {
     fill(0, 0, 0, 1.0);
     stroke(0, 0, 0, 1.0);
     stroke_width(0.0);
 }
 
-// text_width returns the width of a text string at the specified font and size.
+/// Returns the width of a text string at the specified font and size.
 pub fn text_width(s: &str, f: &Font, pointsize: u32) -> f32 {
     let mut tw: VGfloat = 0.0;
     let size = pointsize as VGfloat;
@@ -20,7 +23,7 @@ pub fn text_width(s: &str, f: &Font, pointsize: u32) -> f32 {
     return tw as f32;
 }
 
-// text renders a string of text at a specified location, size, using the specified font glyphs.
+/// Renders a string of text at a specified location, size, using the specified font glyphs.
 pub fn text(x: VGfloat, y: VGfloat, s: &str, f: &Font, pointsize: u32) {
     let size = pointsize as VGfloat;
     let mut xx = x;
@@ -46,24 +49,24 @@ pub fn text(x: VGfloat, y: VGfloat, s: &str, f: &Font, pointsize: u32) {
     }
 }
 
-// text_mid draws text centered on (x,y).
+/// Draws text centered on (x,y).
 pub fn text_mid(x: VGfloat, y: VGfloat, s: &str, f: &Font, pointsize: u32) {
     let tw = text_width(s, f, pointsize);
     text(x - (tw / 2.0), y, s, f, pointsize);
 }
 
-// text_end draws text with its end aligned to (x,y).
+/// Draws text with its end aligned to (x,y).
 pub fn text_end(x: VGfloat, y: VGfloat, s: &str, f: &Font, pointsize: u32) {
     let tw = text_width(s, f, pointsize);
     text(x - tw, y, s, f, pointsize);
 }
 
-// text_height reports a font's height.
+/// Reports a font's height.
 pub fn text_height(f: &Font, pointsize: u32) -> VGfloat {
     return (f.font_height * pointsize as i32) as VGfloat / 65536.0;
 }
 
-// text_depth reports a font's depth (how far under the baseline it goes).
+/// Reports a font's depth (how far under the baseline it goes).
 pub fn text_depth(f: &Font, pointsize: u32) -> VGfloat {
     return (-f.descender_height * pointsize as i32) as VGfloat / 65536.0;
 }
@@ -72,28 +75,28 @@ pub fn text_depth(f: &Font, pointsize: u32) -> VGfloat {
 // Transformations
 //
 
-// translate translates the coordinate system to x,y.
+/// Translates the coordinate system to x,y.
 pub fn translate(x: VGfloat, y: VGfloat) {
     unsafe {
         vgTranslate(x, y);
     }
 }
 
-// rotate rotates the coordinate system around angle r.
+/// Rotates the coordinate system around angle r.
 pub fn rotate(r: VGfloat) {
     unsafe {
         vgRotate(r);
     }
 }
 
-// shear shears the x coordinate by x degrees, the y coordinate by y degrees.
+/// Shears the x coordinate by x degrees, the y coordinate by y degrees.
 pub fn shear(x: VGfloat, y: VGfloat) {
     unsafe {
         vgShear(x, y);
     }
 }
 
-// scale scales by x, y.
+/// Scales by x, y.
 pub fn scale(x: VGfloat, y: VGfloat) {
     unsafe {
         vgScale(x, y);
@@ -104,7 +107,7 @@ pub fn scale(x: VGfloat, y: VGfloat) {
 // Style functions
 //
 
-// set_fill sets the fill color.
+/// Sets the fill color.
 fn set_fill(color: &[VGfloat]) {
     unsafe {
         let fill_paint = vgCreatePaint();
@@ -124,7 +127,7 @@ fn set_fill(color: &[VGfloat]) {
     }
 }
 
-// set_stroke sets the stroke color.
+/// Sets the stroke color.
 fn set_stroke(color: &[VGfloat]) {
     unsafe {
         let stroke_paint = vgCreatePaint();
@@ -144,7 +147,7 @@ fn set_stroke(color: &[VGfloat]) {
     }
 }
 
-// stroke_width sets the stroke width.
+/// Sets the stroke width.
 pub fn stroke_width(width: VGfloat) {
     unsafe {
         vgSetf(VGParamType::VG_STROKE_LINE_WIDTH, width);
@@ -163,7 +166,7 @@ pub fn stroke_width(width: VGfloat) {
 // Color functions
 //
 
-// rgba fills a color vectors from a RGBA quad.
+/// Fills a color vectors from a RGBA quad.
 pub fn rgba(r: u32, g: u32, b: u32, a: VGfloat) -> [VGfloat; 4] {
     let mut color: [VGfloat; 4] = [0.0, 0.0, 0.0, 1.0];
     if r <= 255 {
@@ -181,24 +184,24 @@ pub fn rgba(r: u32, g: u32, b: u32, a: VGfloat) -> [VGfloat; 4] {
     return color;
 }
 
-// rgb returns a solid color from a RGB triple.
+/// Returns a solid color from a RGB triple.
 pub fn rgb(r: u32, g: u32, b: u32) -> [VGfloat; 4] {
     return rgba(r, g, b, 1.0);
 }
 
-// stroke sets the stroke color, defined as a RGB triple.
+/// Sets the stroke color, defined as a RGB triple.
 pub fn stroke(r: u32, g: u32, b: u32, a: VGfloat) {
     let color = rgba(r, g, b, a);
     set_stroke(&color);
 }
 
-// fill sets the fillcolor, defined as a RGBA quad.
+/// Sets the fillcolor, defined as a RGBA quad.
 pub fn fill(r: u32, g: u32, b: u32, a: VGfloat) {
     let color = rgba(r, g, b, a);
     set_fill(&color);
 }
 
-// set_stops sets color stops for gradients.
+/// Sets color stops for gradients.
 pub fn set_stop(paint: VGPaint, stops: &[VGfloat], n: i32) {
     unsafe {
         let multmode = VGboolean::VG_FALSE;
@@ -223,7 +226,7 @@ pub fn set_stop(paint: VGPaint, stops: &[VGfloat], n: i32) {
     }
 }
 
-// fill_linear_gradient fills with a linear gradient.
+/// Fills with a linear gradient.
 pub fn fill_linear_gradient(
     x1: VGfloat,
     y1: VGfloat,
@@ -251,7 +254,7 @@ pub fn fill_linear_gradient(
     }
 }
 
-// fill_radial_gradient fills with a radial gradient.
+/// Fills with a radial gradient.
 pub fn fill_radial_gradient(
     cx: VGfloat,
     cy: VGfloat,
@@ -280,7 +283,7 @@ pub fn fill_radial_gradient(
     }
 }
 
-// clip_rect limits the drawing area to specified rectangle.
+/// Limits the drawing area to specified rectangle.
 pub fn clip_rect(x: VGint, y: VGint, w: VGint, h: VGint) {
     unsafe {
         vgSeti(VGParamType::VG_SCISSORING, VGboolean::VG_TRUE as i32);
@@ -289,7 +292,7 @@ pub fn clip_rect(x: VGint, y: VGint, w: VGint, h: VGint) {
     }
 }
 
-// clip_end stops limiting drawing area to specified rectangle.
+/// Stops limiting drawing area to specified rectangle.
 pub fn clip_end() {
     unsafe {
         vgSeti(VGParamType::VG_SCISSORING, VGboolean::VG_FALSE as i32);
@@ -300,7 +303,7 @@ pub fn clip_end() {
 // Shape functions
 //
 
-// new_path creates a path for internal use.
+/// Creates a path for internal use.
 fn new_path() -> VGPath {
     unsafe {
         return vgCreatePath(
@@ -315,7 +318,7 @@ fn new_path() -> VGPath {
     }
 }
 
-// make_curve makes path data using specified segments and coordinates.
+/// Makes path data using specified segments and coordinates.
 pub fn make_curve(segments: &[VGubyte], coords: &[VGfloat], flags: VGbitfield) {
     let path = new_path();
     unsafe {
@@ -325,7 +328,7 @@ pub fn make_curve(segments: &[VGubyte], coords: &[VGfloat], flags: VGbitfield) {
     }
 }
 
-// cbezier makes a cubic bezier curve.
+/// Makes a cubic bezier curve.
 pub fn cbezier(
     sx: VGfloat,
     sy: VGfloat,
@@ -348,7 +351,7 @@ pub fn cbezier(
     );
 }
 
-// qbezier makes a quadratic bezier curve.
+/// Makes a quadratic bezier curve.
 pub fn qbezier(sx: VGfloat, sy: VGfloat, cx: VGfloat, cy: VGfloat, ex: VGfloat, ey: VGfloat) {
     let segments: [VGubyte; 2] = [
         VGPathCommand::VG_MOVE_TO_ABS as VGubyte,
@@ -362,7 +365,7 @@ pub fn qbezier(sx: VGfloat, sy: VGfloat, cx: VGfloat, cy: VGfloat, ex: VGfloat, 
     );
 }
 
-// interleave interleaves arrays of x, y into a single array.
+/// Interleaves arrays of x, y into a single array.
 pub fn interleave(x: &[VGfloat], y: &[VGfloat], n: i32, points: &mut [VGfloat]) {
     for i in 0..(n as usize) {
         points[2 * i] = x[i];
@@ -370,7 +373,7 @@ pub fn interleave(x: &[VGfloat], y: &[VGfloat], n: i32, points: &mut [VGfloat]) 
     }
 }
 
-// poly makes either a polygon or polyline.
+/// Makes either a polygon or polyline.
 pub fn poly(x: &[VGfloat], y: &[VGfloat], n: VGint, flag: VGbitfield) {
     let mut points = vec![0.0f32; (n as usize) * 2];
     let path = new_path();
@@ -382,17 +385,17 @@ pub fn poly(x: &[VGfloat], y: &[VGfloat], n: VGint, flag: VGbitfield) {
     }
 }
 
-// polygon makes a filled polygon with vertices in x, y arrays.
+/// Makes a filled polygon with vertices in x, y arrays.
 pub fn polygon(x: &[VGfloat], y: &[VGfloat], n: i32) {
     poly(x, y, n, VGPaintMode::VG_FILL_PATH as u32);
 }
 
-// polyline makes a polyline with vertices at x, y arrays.
+/// Makes a polyline with vertices at x, y arrays.
 pub fn polyline(x: &[VGfloat], y: &[VGfloat], n: i32) {
     poly(x, y, n, VGPaintMode::VG_STROKE_PATH as u32);
 }
 
-// rect makes a rectangle at the specified location and dimensions.
+/// Makes a rectangle at the specified location and dimensions.
 pub fn rect(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     let path = new_path();
     unsafe {
@@ -405,7 +408,7 @@ pub fn rect(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     }
 }
 
-// line makes a line from (x1,y1) to (x2,y2).
+/// Makes a line from (x1,y1) to (x2,y2).
 pub fn line(x1: VGfloat, y1: VGfloat, x2: VGfloat, y2: VGfloat) {
     let path = new_path();
     unsafe {
@@ -415,7 +418,7 @@ pub fn line(x1: VGfloat, y1: VGfloat, x2: VGfloat, y2: VGfloat) {
     }
 }
 
-// round_rect makes a rounded rectangle at the specified location and dimensions.
+/// Makes a rounded rectangle at the specified location and dimensions.
 pub fn round_rect(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat, rw: VGfloat, rh: VGfloat) {
     let path = new_path();
     unsafe {
@@ -428,7 +431,7 @@ pub fn round_rect(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat, rw: VGfloat, r
     }
 }
 
-// ellipse makes an ellipse at the specified location and dimensions.
+/// Makes an ellipse at the specified location and dimensions.
 pub fn ellipse(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     let path = new_path();
     unsafe {
@@ -441,12 +444,12 @@ pub fn ellipse(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     }
 }
 
-// circle makes a circle at the specified location and dimensions.
+/// Makes a circle at the specified location and dimensions.
 pub fn circle(x: VGfloat, y: VGfloat, r: VGfloat) {
     ellipse(x, y, r, r);
 }
 
-// arc makes an elliptical arc at the specified location and dimensions.
+/// Makes an elliptical arc at the specified location and dimensions.
 pub fn arc(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat, sa: VGfloat, aext: VGfloat) {
     let path = new_path();
     unsafe {
@@ -464,7 +467,7 @@ pub fn arc(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat, sa: VGfloat, aext: VG
 // unlike where using a strokewidth of 0 disables the stroke.
 // Either this or change the original functions to require the VG_x_PATH flags
 
-// cbezier_outline makes a cubic bezier curve, stroked.
+/// Makes a cubic bezier curve, stroked.
 pub fn cbezier_outline(
     sx: VGfloat,
     sy: VGfloat,
@@ -483,7 +486,7 @@ pub fn cbezier_outline(
     make_curve(&segments, &coords, VGPaintMode::VG_STROKE_PATH as u32);
 }
 
-// qbezier_outline makes a quadratic bezier curve, outlined.
+/// Makes a quadratic bezier curve, outlined.
 pub fn qbezier_outline(
     sx: VGfloat,
     sy: VGfloat,
@@ -500,7 +503,7 @@ pub fn qbezier_outline(
     make_curve(&segments, &coords, VGPaintMode::VG_STROKE_PATH as u32);
 }
 
-// rect_outline makes a rectangle at the specified location and dimensions, outlined.
+/// Makes a rectangle at the specified location and dimensions, outlined.
 pub fn rect_outline(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     let path = new_path();
     unsafe {
@@ -510,7 +513,7 @@ pub fn rect_outline(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     }
 }
 
-// roundrect_outline makes a rounded rectangle at the specified location and dimensions, outlined.
+/// Makes a rounded rectangle at the specified location and dimensions, outlined.
 pub fn roundrect_outline(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat, rw: VGfloat, rh: VGfloat) {
     let path = new_path();
     unsafe {
@@ -520,7 +523,7 @@ pub fn roundrect_outline(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat, rw: VGf
     }
 }
 
-// ellipse_outline makes an ellipse at the specified location and dimensions, outlined.
+/// Makes an ellipse at the specified location and dimensions, outlined.
 pub fn ellipse_outline(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     let path = new_path();
     unsafe {
@@ -530,12 +533,12 @@ pub fn ellipse_outline(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
     }
 }
 
-// circle_outline makes a circle at the specified location and dimensions, outlined.
+/// Makes a circle at the specified location and dimensions, outlined.
 pub fn circle_outline(x: VGfloat, y: VGfloat, r: VGfloat) {
     ellipse_outline(x, y, r, r);
 }
 
-// arc_outline makes an elliptical arc at the specified location and dimensions, outlined.
+/// Makes an elliptical arc at the specified location and dimensions, outlined.
 pub fn arc_outline(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat, sa: VGfloat, aext: VGfloat) {
     let path = new_path();
     unsafe {
