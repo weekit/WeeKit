@@ -5,12 +5,11 @@ use weekit::*;
 
 use rand::Rng;
 
-const S: usize = 10;
+const S: usize = 20;
 const W: usize = 5*S;
 const H: usize = 3*S;
 
 struct Life {
-    touch_count: u32,
     grid: [[[bool; H]; W]; 2],
     page: usize,
 }
@@ -18,22 +17,26 @@ struct Life {
 impl Life {
     fn new() -> Life {
         let mut life = Life {
-            touch_count: 0,
             grid: [[[false; H]; W]; 2],
             page: 0,
         };
+        life.reset();
+        life
+    }
+
+    fn reset(&mut self) {
         // thread_rng is often the most convenient source of randomness:
         let mut rng = rand::thread_rng();
         for page in 0..1 {
             for j in 0..H {
                 for i in 0..W {
                     let x: f64 = rng.gen(); // random number in range (0, 1)
-                    life.grid[page][i][j] = x < 0.1;
+                    self.grid[page][i][j] = x < 0.5;
                 }
             }
         }
-        life
     }
+
     fn update(&mut self) -> () {
         let next = 1 - self.page;
 
@@ -62,6 +65,10 @@ impl Life {
                         }
                     }
                 }
+                // Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
+                // Any live cell with two or three live neighbours lives on to the next generation.
+                // Any live cell with more than three live neighbours dies, as if by overpopulation.
+                // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
                 if is_live {
                     self.grid[next][i][j] = (live_neighbors == 2) || (live_neighbors == 3);
                 } else {
@@ -69,13 +76,6 @@ impl Life {
                 }
             }
         }
-        /*
-Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
-Any live cell with two or three live neighbours lives on to the next generation.
-Any live cell with more than three live neighbours dies, as if by overpopulation.
-Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-		*/
-
         self.page = next;
     }
 }
@@ -108,15 +108,14 @@ impl Application for Life {
                 }
             }
         }
-
-        draw::stroke_width(1.0);
-        draw::fill(255, 0, 0, 1.0);
-        draw::stroke(255, 255, 255, 1.0);
     }
 
     fn input(&mut self, ev: &event::Event) -> () {
-        self.touch_count += 1;
-        self.update();
+	println!("{:?}", ev);
+    }
+
+    fn tick(&mut self, _time: std::time::Duration) -> () {
+	self.update();
     }
 }
 

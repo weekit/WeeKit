@@ -43,20 +43,17 @@
 // WeeKit handler functions
 typedef void (*WKDrawHandler)(int, int);
 typedef void (*WKEventHandler)(short, short, int);
+typedef void (*WKTickHandler)(long, int);
 
 // Handler pointers
 WKDrawHandler wkDrawHandler;
 WKEventHandler wkEventHandler;
+WKTickHandler wkTickHandler;
 
 // default window dimensions
 #define INITIAL_WINDOW_WIDTH 800
 #define INITIAL_WINDOW_HEIGHT 480
 #define WINDOW_TITLE "WeeKit Demo - Press F1 for help"
-
-/*****************************************************************
- Global variables
- *****************************************************************/
-VGboolean done;
 
 /*****************************************************************
  View (interface)
@@ -65,7 +62,6 @@ VGboolean done;
   void *vgContext; 			// OpenVG context
   void *vgWindowSurface; 		// OpenVG surface
   CVDisplayLinkRef displayLink; 	// a Core Video display link
-  VGuint time0, time1, framesCounter; 	// fps counter
 }
 @end
 
@@ -193,25 +189,6 @@ VGboolean done;
   return (VGuint)((tp.tv_sec * 1000) + (tp.tv_usec / 1000));
 }
 
-- (void) windowTitleUpdate {
-
-  time1 = [self getTimeMS];
-  // print frame rate every second
-  if (time1 - time0 > 1000) {
-    NSWindow *window = [self window];
-    if (window) {
-      char title[128];
-      VGfloat fps = ((VGfloat)framesCounter * 1000.0f / (VGfloat)(time1 - time0));
-      sprintf(title, "(%d fps) "WINDOW_TITLE, (VGint)fps);
-      // set window title
-      [window setTitle:[NSString stringWithCString:title encoding:NSASCIIStringEncoding]];
-    }
-    // reset frames counter
-    framesCounter = 0;
-    time0 = time1;
-  }
-}
-
 // Core Video display link
 - (CVReturn)getFrameForTime :(const CVTimeStamp *)outputTime {
 
@@ -312,10 +289,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 
   // activate the display link
   CVDisplayLinkStart(displayLink);
-
-  // start frame counter
-  time0 = [self getTimeMS];
-  framesCounter = 0;
 }
 
 - (void) drawRect :(NSRect)dirtyRect {
@@ -340,9 +313,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     // unlock the context
     CGLUnlockContext([[self openGLContext] CGLContextObj]);
     [self unlockFocus];
-
-    // advance the frames counter
-    framesCounter++;
   }
 }
 
@@ -443,10 +413,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 
   if (chars) {
     switch (chars[0]) {
-        // ESC
-      case 27:
-        done = VG_TRUE;
-        break;
       default:
         [super keyDown:theEvent];
         break;
@@ -492,10 +458,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 
 // menu handlers
 - (void) applicationTerminate :(id)sender {
-
-  (void)sender;
-  // exit from main loop
-  done = VG_TRUE;
+  [[NSApplication sharedApplication] stop:sender];
 }
 
 // from NSWindowDelegate
@@ -507,7 +470,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   // OpenGL render buffers will be destroyed. If display link continues to
   // fire without renderbuffers, OpenGL draw calls will set errors.
   CVDisplayLinkStop(displayLink);
-  done = VG_TRUE;
 }
 
 @end
@@ -515,12 +477,10 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 /*****************************************************************
  Main
  *****************************************************************/
-void applicationMenuPopulate(NSMenu* subMenu,
-                             WKView* view) {
-
+void applicationMenuPopulate(NSMenu* subMenu) {
   // quit application
-  NSMenuItem* menuItem = [subMenu addItemWithTitle:[NSString stringWithFormat:@"%@", NSLocalizedString(@"Quit", nil)] action:@selector(applicationTerminate:) keyEquivalent:@"q"];
-  [menuItem setTarget:view];
+  NSMenuItem* menuItem = [subMenu addItemWithTitle:[NSString stringWithFormat:@"%@", NSLocalizedString(@"Quit", nil)] action:@selector(stop:) keyEquivalent:@"q"];
+  [menuItem setTarget:[NSApplication sharedApplication]];
 }
 
 void mainMenuPopulate(WKView* view) {
@@ -535,19 +495,21 @@ void mainMenuPopulate(WKView* view) {
   menuItem = [mainMenu addItemWithTitle:@"Apple" action:NULL keyEquivalent:@""];
   subMenu = [[NSMenu alloc] initWithTitle:@"Apple"];
   [NSApp performSelector:@selector(setAppleMenu:) withObject:subMenu];
-  applicationMenuPopulate(subMenu, view);
+  applicationMenuPopulate(subMenu);
   [mainMenu setSubmenu:subMenu forItem:menuItem];
   [NSApp setMainMenu:mainMenu];
 }
 
 void applicationMenuCreate(WKView* view) {
-
   mainMenuPopulate(view);
 }
 
-int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
+int WKMain(WKDrawHandler drawHandler, 
+           WKEventHandler eventHandler,
+           WKTickHandler tickHandler) {
   wkDrawHandler = drawHandler;
   wkEventHandler = eventHandler;
+  wkTickHandler = tickHandler;
 
   @autoreleasepool {
 
@@ -580,20 +542,16 @@ int WKMain(WKDrawHandler drawHandler, WKEventHandler eventHandler) {
     applicationMenuCreate(view);
     [app finishLaunching];
 
-    // enter main loop
-    done = VG_FALSE;
-    while (!done) {
-      // dispatch events
-      NSEvent* event = [app nextEventMatchingMask: NSEventMaskAny untilDate: [NSDate dateWithTimeIntervalSinceNow: 0.0] inMode: NSDefaultRunLoopMode dequeue: true];
-      if (event != nil) {
-        [app sendEvent: event];
-        [app updateWindows];
-      }
-      else {
-        // modify UI (in this case window title, in order to show FPS) within the main thread
-        [view windowTitleUpdate];
-      }
-    }
+    // start the timer
+    [NSTimer scheduledTimerWithTimeInterval:1.0/20.0 repeats:YES block:^(NSTimer *timer) {  
+        struct timeval tp;
+        struct timezone tzp;
+        gettimeofday(&tp, &tzp);
+	tickHandler(tp.tv_sec, tp.tv_usec * 1000);
+    }];
+
+    // run the app
+    [app run];
 
   } // @autoreleasepool
 
