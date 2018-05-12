@@ -12,6 +12,7 @@ const H: usize = 3*S;
 struct Life {
     grid: [[[bool; H]; W]; 2],
     page: usize,
+    paused: bool,
 }
 
 impl Life {
@@ -19,6 +20,7 @@ impl Life {
         let mut life = Life {
             grid: [[[false; H]; W]; 2],
             page: 0,
+            paused: false,
         };
         life.reset();
         life
@@ -27,17 +29,19 @@ impl Life {
     fn reset(&mut self) {
         // thread_rng is often the most convenient source of randomness:
         let mut rng = rand::thread_rng();
-        for page in 0..1 {
-            for j in 0..H {
-                for i in 0..W {
-                    let x: f64 = rng.gen(); // random number in range (0, 1)
-                    self.grid[page][i][j] = x < 0.5;
-                }
+        for j in 0..H {
+            for i in 0..W {
+                let x: f64 = rng.gen(); // random number in range (0, 1)
+                self.grid[0][i][j] = x < 0.3;
             }
         }
+	self.page = 0;
     }
 
     fn update(&mut self) -> () {
+	if self.paused {
+	    return
+        }
         let next = 1 - self.page;
 
         for j in 0..H {
@@ -110,9 +114,20 @@ impl Application for Life {
         }
     }
 
-    fn input(&mut self, ev: &event::Event) -> () {
-	
+    fn handle_touch(&mut self, ev: &event::TouchEvent) -> () {
 	println!("{:?}", ev);
+    }
+
+    fn handle_key(&mut self, ev: &event::KeyEvent) -> () {
+	println!("{:?}", ev);
+	if ev.key == 57 {
+	    if ev.down {
+		self.paused = true;
+            } else {
+		self.paused = false;
+	        self.reset();
+	    }
+	}
     }
 
     fn tick(&mut self, _time: std::time::Duration) -> () {

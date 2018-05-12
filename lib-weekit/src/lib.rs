@@ -16,8 +16,11 @@ pub trait Application {
     /// Draws the current application screen.
     fn draw(&mut self, width: u32, height: u32) -> ();
 
-    /// Handles user input to the application.
-    fn input(&mut self, event: &event::Event) -> ();
+    /// Handles touch input to the application.
+    fn handle_touch(&mut self, _event: &event::TouchEvent) -> () {}
+
+    /// Handles keyboard input to the application.
+    fn handle_key(&mut self, _event: &event::KeyEvent) -> () {}
 	
     /// Handles clock ticks sent to the application.
     fn tick(&mut self, _time: std::time::Duration) -> () {}

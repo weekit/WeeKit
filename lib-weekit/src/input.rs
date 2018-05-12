@@ -58,7 +58,7 @@ impl Listener {
     pub fn handle(&mut self, t: u16, c: u16, v: i32, app: Arc<Mutex<Application>>) {
         match t {
             EV_SYN => self.handle_syn(c, v, app),
-            EV_KEY => self.handle_key(c, v),
+            EV_KEY => self.handle_key(c, v, app),
             EV_ABS => self.handle_abs(c, v),
             _ => {}
         }
@@ -67,14 +67,14 @@ impl Listener {
         for slot in 0..TOUCH_SLOTS {
             let touch = &self.touches[slot];
             if touch.began {
-                let ev = Event::new(slot, 1, touch.position_x, touch.position_y, 0, 0);
-                self.send(&ev, app.clone());
+                let ev = TouchEvent::new(slot, 1, touch.position_x, touch.position_y);
+                self.send(&ev, &app);
             } else if touch.moved {
-                let ev = Event::new(slot, 2, touch.position_x, touch.position_y, 0, 0);
-                self.send(&ev, app.clone());
+                let ev = TouchEvent::new(slot, 2, touch.position_x, touch.position_y);
+                self.send(&ev, &app);
             } else if touch.ended {
-                let ev = Event::new(slot, 3, touch.position_x, touch.position_y, 0, 0);
-                self.send(&ev, app.clone());
+                let ev = TouchEvent::new(slot, 3, touch.position_x, touch.position_y);
+                self.send(&ev, &app);
             }
         }
         for slot in 0..TOUCH_SLOTS {
@@ -84,7 +84,7 @@ impl Listener {
             touch.ended = false;
         }
     }
-    fn handle_key(&mut self, c: u16, v: i32) {
+    fn handle_key(&mut self, c: u16, v: i32, app: Arc<Mutex<Application>>) {
         if c == BTN_TOUCH {
             if v == 0 {
                 self.touches[self.slot].ended = true;
@@ -92,7 +92,8 @@ impl Listener {
                 self.touches[self.slot].began = true;
             }
         } else {
-            println!("Key {} Value {}", c, v);
+            let ev = KeyEvent::new(c, v == 1);
+            self.send_key(&ev, &app);
         }
     }
     fn handle_abs(&mut self, c: u16, v: i32) {
@@ -133,8 +134,12 @@ impl Listener {
             self.touches[self.slot].ended = true;
         }
     }
-    fn send(&self, ev: &Event, arc: Arc<Mutex<Application>>) {
+    fn send(&self, ev: &TouchEvent, arc: &Arc<Mutex<Application>>) {
         let arc = arc.clone();
-        arc.lock().unwrap().input(ev);
+        arc.lock().unwrap().handle_touch(ev);
+    }
+    fn send_key(&self, ev: &KeyEvent, arc: &Arc<Mutex<Application>>) {
+        let arc = arc.clone();
+        arc.lock().unwrap().handle_key(ev);
     }
 }

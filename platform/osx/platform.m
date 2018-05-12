@@ -394,9 +394,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 }
 
 - (void) keyDown:(NSEvent *)theEvent {
-  NSLog(@"keyDown: %@", theEvent);
-
-
+  // NSLog(@"keyDown: %@", theEvent);
 
   char *chars = (char *)[[theEvent characters] cStringUsingEncoding: NSMacOSRomanStringEncoding];
 
@@ -423,7 +421,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 }
 
 - (void) keyUp:(NSEvent *)theEvent {
-  NSLog(@"keyUp: %@", theEvent);
+  // NSLog(@"keyUp: %@", theEvent);
 
   if (theEvent.keyCode == 49) {
     wkEventHandler(EV_KEY, KEY_SPACE, 0);
@@ -432,7 +430,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 }
 
 - (void) flagsChanged:(NSEvent *)theEvent {
-  NSLog(@"flagsChanged: %@", theEvent);
+  // NSLog(@"flagsChanged: %@", theEvent);
 }
 
 
