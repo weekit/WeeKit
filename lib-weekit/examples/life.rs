@@ -5,7 +5,7 @@ use weekit::*;
 
 use rand::Rng;
 
-const S: usize = 20;
+const S: usize = 30;
 const W: usize = 5*S;
 const H: usize = 3*S;
 
@@ -111,6 +111,7 @@ impl Application for Life {
     }
 
     fn input(&mut self, ev: &event::Event) -> () {
+	
 	println!("{:?}", ev);
     }
 

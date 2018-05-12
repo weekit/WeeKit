@@ -20,6 +20,7 @@ lib/libplatform.dylib: platform/common/shapes.c platform/osx/platform.m
 	clang \
 		platform/common/shapes.c \
 		platform/osx/platform.m \
+		-I platform/osx \
 		-g \
 		-I ${SDK}/include \
 		-L ${SDK}/lib/macosx/ub/gle/standalone \

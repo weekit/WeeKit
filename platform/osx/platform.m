@@ -24,21 +24,7 @@
 #include <VG/vgu.h>
 #include <VG/vgext.h>
 
-// https://www.kernel.org/doc/Documentation/input/multi-touch-protocol.txt
-// on linux systems, defined in /usr/include/linux/events.h
-#define EV_SYN			0x00
-#define EV_KEY			0x01
-#define EV_ABS			0x03
-
-#define SYN_REPORT		0
-#define SYN_MT_REPORT		2
-
-#define ABS_X			0x00
-#define ABS_Y			0x01
-#define ABS_MT_SLOT		0x2f	/* MT slot being modified */
-#define ABS_MT_POSITION_X	0x35	/* Center X ellipse position */
-#define ABS_MT_POSITION_Y	0x36	/* Center Y ellipse position */
-#define ABS_MT_TRACKING_ID	0x39	/* Unique ID of initiated contact */
+#include "input.h"
 
 // WeeKit handler functions
 typedef void (*WKDrawHandler)(int, int);
@@ -408,17 +394,18 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 }
 
 - (void) keyDown:(NSEvent *)theEvent {
+  NSLog(@"keyDown: %@", theEvent);
+
+
 
   char *chars = (char *)[[theEvent characters] cStringUsingEncoding: NSMacOSRomanStringEncoding];
 
-  if (chars) {
-    switch (chars[0]) {
-      default:
-        [super keyDown:theEvent];
-        break;
-    }
+  if (theEvent.keyCode == 49) {
+    wkEventHandler(EV_KEY, KEY_SPACE, 1);
   }
-  else {
+  if (chars) {
+    [super keyDown:theEvent];
+  } else {
     switch ([theEvent keyCode]) {
         // F1
       case 122:
@@ -434,6 +421,20 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     }
   }
 }
+
+- (void) keyUp:(NSEvent *)theEvent {
+  NSLog(@"keyUp: %@", theEvent);
+
+  if (theEvent.keyCode == 49) {
+    wkEventHandler(EV_KEY, KEY_SPACE, 0);
+  }
+  [super keyUp:theEvent];
+}
+
+- (void) flagsChanged:(NSEvent *)theEvent {
+  NSLog(@"flagsChanged: %@", theEvent);
+}
+
 
 - (BOOL) acceptsFirstResponder {
 
@@ -543,11 +544,11 @@ int WKMain(WKDrawHandler drawHandler,
     [app finishLaunching];
 
     // start the timer
-    [NSTimer scheduledTimerWithTimeInterval:1.0/20.0 repeats:YES block:^(NSTimer *timer) {  
-        struct timeval tp;
-        struct timezone tzp;
-        gettimeofday(&tp, &tzp);
-	tickHandler(tp.tv_sec, tp.tv_usec * 1000);
+    [NSTimer scheduledTimerWithTimeInterval:1.0/20.0 repeats:YES block:^(NSTimer *timer) {
+      struct timeval tp;
+      struct timezone tzp;
+      gettimeofday(&tp, &tzp);
+      tickHandler(tp.tv_sec, tp.tv_usec * 1000);
     }];
 
     // run the app
