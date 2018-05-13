@@ -39,7 +39,7 @@ WKTickHandler wkTickHandler;
 // default window dimensions
 #define INITIAL_WINDOW_WIDTH 800
 #define INITIAL_WINDOW_HEIGHT 480
-#define WINDOW_TITLE "WeeKit Demo - Press F1 for help"
+#define WINDOW_TITLE "WeeKit Demo"
 
 /*****************************************************************
  View (interface)
@@ -106,64 +106,6 @@ WKTickHandler wkTickHandler;
 // get the maximum surface dimension supported by the OpenVG backend
 - (VGint) openvgSurfaceMaxDimensionGet {
   return vgPrivSurfaceMaxDimensionGetMZT();
-}
-
-/*****************************************************************
- Windowing system
- *****************************************************************/
-- (void) messageDialog :(const char*)title :(const char*)message {
-  NSAlert* alert = [[NSAlert alloc] init];
-
-  [alert addButtonWithTitle:@"OK"];
-  // set message
-  NSString *sMessage = [NSString stringWithCString:message encoding:NSASCIIStringEncoding];
-  [alert setMessageText:sMessage];
-  [alert setAlertStyle:NSAlertStyleInformational];
-  // display the modal dialog
-  [alert runModal];
-  [alert release];
-}
-
-- (void) aboutDialog {
-
-  char msg[2048];
-  char yearStr[64];
-  time_t t = time(NULL);
-  struct tm *ltm = localtime(&t);
-
-  strcpy(msg, "AmanithVG - www.mazatech.com\n");
-  strcat(msg, "Copyright 2004-");
-  strftime(yearStr, sizeof(yearStr), "%Y", ltm);
-  strcat(msg, yearStr);
-  strcat(msg, " by Mazatech Srl. All Rights Reserved.\n\n");
-  strcat(msg, "OpenVG driver information:\n\n");
-  // vendor
-  strcat(msg, "Vendor: ");
-  strcat(msg, (const char *)vgGetString(VG_VENDOR));
-  strcat(msg, "\n");
-  // renderer
-  strcat(msg, "Renderer: ");
-  strcat(msg, (const char *)vgGetString(VG_RENDERER));
-  strcat(msg, "\n");
-  // version
-  strcat(msg, "Version: ");
-  strcat(msg, (const char *)vgGetString(VG_VERSION));
-  strcat(msg, "\n");
-  // extensions
-  strcat(msg, "Extensions: ");
-  strcat(msg, (const char *)vgGetString(VG_EXTENSIONS));
-  strcat(msg, "\n\n");
-  [self messageDialog :"About AmanithVG" :msg];
-}
-
-- (void) helpDialog {
-
-  char msg[1024];
-
-  strcpy(msg, "F2: About AmanithVG.\n");
-  strcat(msg, "F1: Help.\n");
-  strcat(msg, "Mouse: Move text control points.\n");
-  [self messageDialog :"Command keys" :msg];
 }
 
 // utility functions
@@ -394,30 +336,14 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 }
 
 - (void) keyDown:(NSEvent *)theEvent {
-  // NSLog(@"keyDown: %@", theEvent);
+  //NSLog(@"keyDown: %@", theEvent);
 
   char *chars = (char *)[[theEvent characters] cStringUsingEncoding: NSMacOSRomanStringEncoding];
 
   if (theEvent.keyCode == 49) {
-    wkEventHandler(EV_KEY, KEY_SPACE, 1);
+    wkEventHandler(EV_KEY, KEY_SPACE, 1 + theEvent.isARepeat);
   }
-  if (chars) {
-    [super keyDown:theEvent];
-  } else {
-    switch ([theEvent keyCode]) {
-        // F1
-      case 122:
-        [self helpDialog];
-        break;
-        // F2
-      case 120:
-        [self aboutDialog];
-        break;
-      default:
-        [super keyDown:theEvent];
-        break;
-    }
-  }
+  [super keyDown:theEvent];
 }
 
 - (void) keyUp:(NSEvent *)theEvent {
