@@ -3,6 +3,57 @@
 use openvg::*;
 use font::*;
 
+/// Represents a drawing area.
+pub struct Canvas {
+    w: u32,
+    h: u32,
+}
+
+impl Canvas {
+    /// Creates a new Canvas.
+    pub fn new(w: u32, h: u32) -> Canvas {
+        let canvas = Canvas { w: w, h: h };
+        canvas.background(255, 255, 255);
+        reset();
+        unsafe {
+            vgLoadIdentity();
+        }
+        canvas
+    }
+
+    /// Clears the canvas to a solid background color.
+    pub fn background(&self, r: u32, g: u32, b: u32) {
+        let color = rgb(r, g, b);
+        unsafe {
+            vgSetfv(VGParamType::VG_CLEAR_COLOR, 4, color.as_ptr());
+            vgClear(0, 0, self.w, self.h);
+        }
+    }
+
+    /// Clears the canvas to a background color with alpha.
+    pub fn background_rgb(&self, r: u32, g: u32, b: u32, a: f32) {
+        let color = rgba(r, g, b, a);
+        unsafe {
+            vgSetfv(VGParamType::VG_CLEAR_COLOR, 4, color.as_ptr());
+            vgClear(0, 0, self.w, self.h);
+        }
+    }
+
+    /// Clears the window to previously set background colour.
+    pub fn window_clear(&self) {
+        unsafe {
+            vgClear(0, 0, self.w, self.h);
+        }
+    }
+
+    /// Clears a given rectangle in window coordinates (unaffected by transformations).
+    pub fn area_clear(x: u32, y: u32, w: u32, h: u32) {
+        unsafe {
+            vgClear(x, y, w, h);
+        }
+    }
+}
+
 /// Resets drawing colors to black and stroke width to zero.
 pub fn reset() {
     fill(0, 0, 0, 1.0);

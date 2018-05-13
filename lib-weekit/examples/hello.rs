@@ -51,8 +51,8 @@ impl<'a> Application for Demo<'a> {
             None => self.load_fonts(),
         }
 
-        let screen = display::Screen::new(width, height);
-        screen.background(64, 0, 64);
+        let canvas = draw::Canvas::new(width, height);
+        canvas.background(64, 0, 64);
 
         draw::fill(44, 77, 232, 1.0); // Big blue marble
         draw::circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"

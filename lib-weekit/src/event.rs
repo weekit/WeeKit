@@ -54,3 +54,21 @@ impl KeyEvent {
         }
     }
 }
+
+#[derive(Copy, Clone, Debug)]
+pub struct TickEvent {
+    /// Time of the event (seconds component).
+    pub sec: i32,    
+    /// Time of the event (microseconds component).
+    pub usec: i32,   
+}
+
+impl TickEvent {
+    /// Creates an event.
+    pub fn new() -> TickEvent {
+        TickEvent {
+            sec: 0,
+            usec: 0,
+        }
+    }
+}

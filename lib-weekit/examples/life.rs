@@ -86,21 +86,21 @@ impl Life {
 
 impl Application for Life {
     fn draw(&mut self, width: u32, height: u32) -> () {
-        let screen = display::Screen::new(width, height);
-        screen.background(64, 0, 0);
+        let canvas = draw::Canvas::new(width, height);
+        canvas.background(64, 0, 0);
 
-        // define a rectangle in the middle of the screen
+        // define a rectangle in the middle of the canvas
         let cw = width as f32 / W as f32;
         let ch = height as f32 / H as f32;
         let x0 = 0.5 * (width as f32 - cw * W as f32);
         let y0 = 0.5 * (height as f32 - ch * H as f32);
 
         // draw the square
-        draw::fill(32, 32, 32, 1.0);
+        draw::fill(8, 8, 8, 1.0);
         draw::rect(x0, y0, cw * W as f32, ch * H as f32);
 
         // draw a grid of inset squares
-        draw::fill(255, 255, 255, 1.0);
+        draw::fill(255, 255, 128, 1.0);
 
         let inset = cw * 0.1;
         for j in 0..H {
@@ -130,7 +130,7 @@ impl Application for Life {
 	}
     }
 
-    fn tick(&mut self, _time: std::time::Duration) -> () {
+    fn handle_tick(&mut self, _time: std::time::Duration) -> () {
 	self.update();
     }
 }

@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-pub mod display;
 pub mod draw;
 pub mod event;
 pub mod font;
@@ -23,7 +22,7 @@ pub trait Application {
     fn handle_key(&mut self, _event: &event::KeyEvent) -> () {}
 	
     /// Handles clock ticks sent to the application.
-    fn tick(&mut self, _time: std::time::Duration) -> () {}
+    fn handle_tick(&mut self, _time: std::time::Duration) -> () {}
 }
 
 /// Starts the application and runs the main event loop.
@@ -60,7 +59,7 @@ extern "C" fn tick_handler(secs: u64, nanos: u32) -> () {
         match APPLICATION {
             Some(ref arc) => {
                 let arc = arc.clone();
-                arc.lock().unwrap().tick(Duration::new(secs, nanos));
+                arc.lock().unwrap().handle_tick(Duration::new(secs, nanos));
             }
             None => {}
         }
