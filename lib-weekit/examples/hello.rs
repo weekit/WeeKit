@@ -133,7 +133,7 @@ impl<'a> Application for Demo<'a> {
         }
     }
 
-    fn input(&mut self, ev: &event::Event) -> () {
+    fn handle_touch(&mut self, ev: &event::TouchEvent) -> () {
         println!("input");
         self.event_count += 1;
         if ev.kind == 1 {
