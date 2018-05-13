@@ -5,7 +5,7 @@ use weekit::*;
 
 use rand::Rng;
 
-const S: usize = 30;
+const S: usize = 10;
 const W: usize = 5*S;
 const H: usize = 3*S;
 
@@ -32,7 +32,7 @@ impl Life {
         for j in 0..H {
             for i in 0..W {
                 let x: f64 = rng.gen(); // random number in range (0, 1)
-                self.grid[0][i][j] = x < 0.3;
+                self.grid[0][i][j] = x < 0.5;
             }
         }
 	self.page = 0;
@@ -121,9 +121,9 @@ impl Application for Life {
     fn handle_key(&mut self, ev: &event::KeyEvent) -> () {
 	println!("{:?}", ev);
 	if ev.key == 57 {
-	    if ev.down {
+	    if ev.kind == 1 {
 		self.paused = true;
-            } else {
+            } else if ev.kind == 0 {
 		self.paused = false;
 	        self.reset();
 	    }

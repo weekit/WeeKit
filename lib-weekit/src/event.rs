@@ -35,8 +35,8 @@ impl TouchEvent {
 pub struct KeyEvent {
     /// An integer code for the key.
     pub key: u16,
-    /// True if the key is pressed down, false if up.
-    pub down: bool,
+    /// 0=up, 1=down, 2=repeat.
+    pub kind: u8,
     /// Time of the event (seconds component).
     pub sec: i32,    
     /// Time of the event (microseconds component).
@@ -45,10 +45,10 @@ pub struct KeyEvent {
 
 impl KeyEvent {
     /// Creates an event.
-    pub fn new(key: u16, down: bool) -> KeyEvent {
+    pub fn new(key: u16, kind: u8) -> KeyEvent {
         KeyEvent {
             key: key,
-            down: down,
+            kind: kind,
             sec: 0,
             usec: 0,
         }

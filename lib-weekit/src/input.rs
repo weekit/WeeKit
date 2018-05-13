@@ -69,7 +69,7 @@ impl Listener {
             if touch.began {
                 let ev = TouchEvent::new(slot, 1, touch.position_x, touch.position_y);
                 self.send(&ev, &app);
-            } else if touch.moved {
+	    } else if touch.moved {
                 let ev = TouchEvent::new(slot, 2, touch.position_x, touch.position_y);
                 self.send(&ev, &app);
             } else if touch.ended {
@@ -92,7 +92,7 @@ impl Listener {
                 self.touches[self.slot].began = true;
             }
         } else {
-            let ev = KeyEvent::new(c, v == 1);
+            let ev = KeyEvent::new(c, v as u8);
             self.send_key(&ev, &app);
         }
     }
