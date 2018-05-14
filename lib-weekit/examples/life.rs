@@ -6,8 +6,8 @@ use weekit::*;
 use rand::Rng;
 
 const S: usize = 10;
-const W: usize = 5*S;
-const H: usize = 3*S;
+const W: usize = 5 * S;
+const H: usize = 3 * S;
 
 struct Life {
     grid: [[[bool; H]; W]; 2],
@@ -35,12 +35,12 @@ impl Life {
                 self.grid[0][i][j] = x < 0.5;
             }
         }
-	self.page = 0;
+        self.page = 0;
     }
 
     fn update(&mut self) -> () {
-	if self.paused {
-	    return
+        if self.paused {
+            return;
         }
         let next = 1 - self.page;
 
@@ -82,6 +82,26 @@ impl Life {
         }
         self.page = next;
     }
+
+    fn handle_touch(&mut self, ev: event::Touch) -> () {
+        println!("{:?}", ev);
+    }
+
+    fn handle_key(&mut self, ev: event::Key) -> () {
+        println!("{:?}", ev);
+        if ev.key == 57 {
+            if ev.kind == 1 {
+                self.paused = true;
+            } else if ev.kind == 0 {
+                self.paused = false;
+                self.reset();
+            }
+        }
+    }
+
+    fn handle_tick(&mut self) -> () {
+        self.update();
+    }
 }
 
 impl Application for Life {
@@ -114,24 +134,12 @@ impl Application for Life {
         }
     }
 
-    fn handle_touch(&mut self, ev: &event::TouchEvent) -> () {
-	println!("{:?}", ev);
-    }
-
-    fn handle_key(&mut self, ev: &event::KeyEvent) -> () {
-	println!("{:?}", ev);
-	if ev.key == 57 {
-	    if ev.kind == 1 {
-		self.paused = true;
-            } else if ev.kind == 0 {
-		self.paused = false;
-	        self.reset();
-	    }
-	}
-    }
-
-    fn handle_tick(&mut self, _time: std::time::Duration) -> () {
-	self.update();
+    fn handle(&mut self, ev: &event::Event) {
+        match ev {
+            &event::Event::Touch(t, _) => self.handle_touch(t),
+            &event::Event::Key(k, _) => self.handle_key(k),
+            &event::Event::Tick(_) => self.handle_tick(),
+        }
     }
 }
 

@@ -8,21 +8,14 @@ mod input;
 mod openvg;
 
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 /// Specifies required application capabilities.
 pub trait Application {
     /// Draws the current application screen.
     fn draw(&mut self, width: u32, height: u32) -> ();
 
-    /// Handles touch input to the application.
-    fn handle_touch(&mut self, _event: &event::TouchEvent) -> () {}
-
-    /// Handles keyboard input to the application.
-    fn handle_key(&mut self, _event: &event::KeyEvent) -> () {}
-	
-    /// Handles clock ticks sent to the application.
-    fn handle_tick(&mut self, _time: std::time::Duration) -> () {}
+    /// Handles application events.
+    fn handle(&mut self, _event: &event::Event) -> () {}
 }
 
 /// Starts the application and runs the main event loop.
@@ -35,9 +28,11 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
 }
 
 extern "C" {
-    fn WKMain(f: extern "C" fn(u32, u32) -> (), 
-	          e: extern "C" fn(u16, u16, i32) -> (),
-			  t: extern "C" fn(u64, u32) -> ()) -> i64;
+    fn WKMain(
+        f: extern "C" fn(u32, u32) -> (),
+        e: extern "C" fn(u16, u16, i32) -> (),
+        t: extern "C" fn() -> (),
+    ) -> i64;
 }
 
 static mut APPLICATION: Option<Arc<Mutex<Application>>> = None;
@@ -54,12 +49,12 @@ extern "C" fn draw_handler(width: u32, height: u32) -> () {
     }
 }
 
-extern "C" fn tick_handler(secs: u64, nanos: u32) -> () {
+extern "C" fn tick_handler() -> () {
     unsafe {
         match APPLICATION {
             Some(ref arc) => {
                 let arc = arc.clone();
-                arc.lock().unwrap().handle_tick(Duration::new(secs, nanos));
+                arc.lock().unwrap().handle(&event::Event::new_tick());
             }
             None => {}
         }

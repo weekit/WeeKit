@@ -1,4 +1,4 @@
-use event::*;
+use event;
 use Application;
 
 use std::sync::Arc;
@@ -67,13 +67,16 @@ impl Listener {
         for slot in 0..TOUCH_SLOTS {
             let touch = &self.touches[slot];
             if touch.began {
-                let ev = TouchEvent::new(slot, 1, touch.position_x, touch.position_y);
+                let t = event::Touch::new(slot, 1, touch.position_x, touch.position_y);
+                let ev = event::Event::new_touch(t);
                 self.send(&ev, &app);
-	    } else if touch.moved {
-                let ev = TouchEvent::new(slot, 2, touch.position_x, touch.position_y);
+            } else if touch.moved {
+                let t = event::Touch::new(slot, 2, touch.position_x, touch.position_y);
+                let ev = event::Event::new_touch(t);
                 self.send(&ev, &app);
             } else if touch.ended {
-                let ev = TouchEvent::new(slot, 3, touch.position_x, touch.position_y);
+                let t = event::Touch::new(slot, 3, touch.position_x, touch.position_y);
+                let ev = event::Event::new_touch(t);
                 self.send(&ev, &app);
             }
         }
@@ -92,8 +95,9 @@ impl Listener {
                 self.touches[self.slot].began = true;
             }
         } else {
-            let ev = KeyEvent::new(c, v as u8);
-            self.send_key(&ev, &app);
+            let k = event::Key::new(c, v as u8);
+            let ev = event::Event::new_key(k);
+            self.send(&ev, &app);
         }
     }
     fn handle_abs(&mut self, c: u16, v: i32) {
@@ -134,12 +138,8 @@ impl Listener {
             self.touches[self.slot].ended = true;
         }
     }
-    fn send(&self, ev: &TouchEvent, arc: &Arc<Mutex<Application>>) {
+    fn send(&self, ev: &event::Event, arc: &Arc<Mutex<Application>>) {
         let arc = arc.clone();
-        arc.lock().unwrap().handle_touch(ev);
-    }
-    fn send_key(&self, ev: &KeyEvent, arc: &Arc<Mutex<Application>>) {
-        let arc = arc.clone();
-        arc.lock().unwrap().handle_key(ev);
+        arc.lock().unwrap().handle(ev);
     }
 }

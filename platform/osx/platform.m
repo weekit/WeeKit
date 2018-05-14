@@ -29,7 +29,7 @@
 // WeeKit handler functions
 typedef void (*WKDrawHandler)(int, int);
 typedef void (*WKEventHandler)(short, short, int);
-typedef void (*WKTickHandler)(long, int);
+typedef void (*WKTickHandler)();
 
 // Handler pointers
 WKDrawHandler wkDrawHandler;
@@ -469,10 +469,7 @@ int WKMain(WKDrawHandler drawHandler,
 
     // start the timer
     [NSTimer scheduledTimerWithTimeInterval:1.0/20.0 repeats:YES block:^(NSTimer *timer) {
-      struct timeval tp;
-      struct timezone tzp;
-      gettimeofday(&tp, &tzp);
-      tickHandler(tp.tv_sec, tp.tv_usec * 1000);
+      tickHandler();
     }];
 
     // run the app

@@ -42,6 +42,17 @@ impl<'a> Demo<'a> {
         self.sans_typeface = Some(font::Font::sans());
         self.sans_mono_typeface = Some(font::Font::sans_mono());
     }
+    fn handle_touch(&mut self, ev: &event::Touch) -> () {
+        println!("input");
+        self.event_count += 1;
+        if ev.kind == 1 {
+            self.circles[ev.slot as usize].visible = true;
+        } else if ev.kind == 3 {
+            self.circles[ev.slot as usize].visible = false;
+        }
+        self.circles[ev.slot as usize].x = ev.x;
+        self.circles[ev.slot as usize].y = ev.y;
+    }
 }
 
 impl<'a> Application for Demo<'a> {
@@ -133,16 +144,11 @@ impl<'a> Application for Demo<'a> {
         }
     }
 
-    fn handle_touch(&mut self, ev: &event::TouchEvent) -> () {
-        println!("input");
-        self.event_count += 1;
-        if ev.kind == 1 {
-            self.circles[ev.slot as usize].visible = true;
-        } else if ev.kind == 3 {
-            self.circles[ev.slot as usize].visible = false;
+    fn handle(&mut self, ev: &event::Event) {
+        match ev {
+            &event::Event::Touch(t, _) => self.handle_touch(&t),
+			_default => {},
         }
-        self.circles[ev.slot as usize].x = ev.x;
-        self.circles[ev.slot as usize].y = ev.y;
     }
 }
 
