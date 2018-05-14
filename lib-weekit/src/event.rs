@@ -1,28 +1,35 @@
 //! Representation of user input events.
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
+/// Represents applicatoin events.
 pub enum Event {
     Touch(Touch, Duration),
     Key(Key, Duration),
     Tick(Duration),
 }
 
+fn elapsed() -> Duration {
+	lazy_static! {
+	    static ref START: Instant = {
+	       Instant::now()
+	    };
+	};
+	START.elapsed()
+}
+
 impl Event {
     /// Creates a new Touch event.
     pub fn new_touch(t: Touch) -> Event {
-        let now = Duration::new(0, 0);
-        Event::Touch(t, now)
+        Event::Touch(t, elapsed())
     }
     /// Creates a new Key event.
     pub fn new_key(k: Key) -> Event {
-        let now = Duration::new(0, 0);
-        Event::Key(k, now)
+        Event::Key(k, elapsed())
     }
     /// Creates a new Tick event.
     pub fn new_tick() -> Event {
-        let now = Duration::new(0, 0);
-        Event::Tick(now)
+        Event::Tick(elapsed())
     }
 }
 
