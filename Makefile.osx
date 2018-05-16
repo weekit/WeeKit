@@ -4,7 +4,7 @@ SDK=~/Desktop/amanithvg-sdk
 
 APP=Demo.app
 
-EXAMPLE=life
+EXAMPLE=rocks
 
 all:	app
 

@@ -147,7 +147,7 @@ impl<'a> Application for Demo<'a> {
     fn handle(&mut self, ev: &event::Event) {
         match ev {
             &event::Event::Touch(t, _) => self.handle_touch(&t),
-			_default => {},
+            _default => {}
         }
     }
 }

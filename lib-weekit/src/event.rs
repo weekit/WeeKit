@@ -10,12 +10,12 @@ pub enum Event {
 }
 
 fn elapsed() -> Duration {
-	lazy_static! {
-	    static ref START: Instant = {
-	       Instant::now()
-	    };
-	};
-	START.elapsed()
+    lazy_static! {
+        static ref START: Instant = {
+           Instant::now()
+        };
+    };
+    START.elapsed()
 }
 
 impl Event {

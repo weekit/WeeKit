@@ -337,22 +337,40 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) keyDown:(NSEvent *)theEvent {
   //NSLog(@"keyDown: %@", theEvent);
+  [self handleKey:(NSEvent *) theEvent down:true];
+}
+
+#define KEYCODE_MAX 256
+
+- (void) handleKey:(NSEvent *) theEvent down:(bool) down {
+
+	static int k[KEYCODE_MAX];
+	for (int i = 0; i < KEYCODE_MAX; i++) {
+		k[i] = -1;
+	}
+  k[0] = KEY_A;
+	k[49] = KEY_SPACE;
+	k[123] = KEY_LEFT;
+	k[124] = KEY_RIGHT;
+  k[125] = KEY_DOWN;
+  k[126] = KEY_UP;
 
   char *chars = (char *)[[theEvent characters] cStringUsingEncoding: NSMacOSRomanStringEncoding];
 
-  if (theEvent.keyCode == 49) {
-    wkEventHandler(EV_KEY, KEY_SPACE, 1 + theEvent.isARepeat);
+  int c = theEvent.keyCode;
+  if (c < KEYCODE_MAX) {   	  
+    unsigned key = k[c];
+    if (key != -1) {
+      wkEventHandler(EV_KEY, key, down * (1 + theEvent.isARepeat));
+	  return;
+    }
   }
-  [super keyDown:theEvent];
+  NSLog(@"unhandled %d", theEvent.keyCode);
 }
 
 - (void) keyUp:(NSEvent *)theEvent {
   // NSLog(@"keyUp: %@", theEvent);
-
-  if (theEvent.keyCode == 49) {
-    wkEventHandler(EV_KEY, KEY_SPACE, 0);
-  }
-  [super keyUp:theEvent];
+  [self handleKey:(NSEvent *) theEvent down:false];
 }
 
 - (void) flagsChanged:(NSEvent *)theEvent {
