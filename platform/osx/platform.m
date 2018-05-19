@@ -27,11 +27,13 @@
 #include "input.h"
 
 // WeeKit handler functions
+typedef void (*WKSizeHandler)(int, int);
 typedef void (*WKDrawHandler)(int, int);
 typedef void (*WKEventHandler)(short, short, int);
 typedef void (*WKTickHandler)();
 
 // Handler pointers
+WKSizeHandler wkSizeHandler;
 WKDrawHandler wkDrawHandler;
 WKEventHandler wkEventHandler;
 WKTickHandler wkTickHandler;
@@ -55,6 +57,21 @@ WKTickHandler wkTickHandler;
  View (implementation)
  *****************************************************************/
 @implementation WKView
+
+#define KEYCODE_MAX 256
+static int k[KEYCODE_MAX];
+
++ (void) initialize {
+  for (int i = 0; i < KEYCODE_MAX; i++) {
+    k[i] = -1;
+  }
+  k[0] = KEY_A;
+  k[49] = KEY_SPACE;
+  k[123] = KEY_LEFT;
+  k[124] = KEY_RIGHT;
+  k[125] = KEY_DOWN;
+  k[126] = KEY_UP;
+}
 
 /*****************************************************************
  OpenVG
@@ -264,6 +281,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     vgPrivSurfaceResizeMZT(vgWindowSurface, (VGint)bound.width, (VGint)bound.height);
     VGint surfaceWidth = [self openvgSurfaceWidthGet];
     VGint surfaceHeight = [self openvgSurfaceHeightGet];
+	
+    // resize drawing surface
+    wkSizeHandler([self openvgSurfaceWidthGet], [self openvgSurfaceHeightGet]);
 
     // unlock the context
     CGLUnlockContext([[self openGLContext] CGLContextObj]);
@@ -340,25 +360,11 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
   [self handleKey:(NSEvent *) theEvent down:true];
 }
 
-#define KEYCODE_MAX 256
-
 - (void) handleKey:(NSEvent *) theEvent down:(bool) down {
-
-	static int k[KEYCODE_MAX];
-	for (int i = 0; i < KEYCODE_MAX; i++) {
-		k[i] = -1;
-	}
-  k[0] = KEY_A;
-	k[49] = KEY_SPACE;
-	k[123] = KEY_LEFT;
-	k[124] = KEY_RIGHT;
-  k[125] = KEY_DOWN;
-  k[126] = KEY_UP;
-
   char *chars = (char *)[[theEvent characters] cStringUsingEncoding: NSMacOSRomanStringEncoding];
 
   int c = theEvent.keyCode;
-  if (c < KEYCODE_MAX) {   	  
+  if (c < KEYCODE_MAX) {
     unsigned key = k[c];
     if (key != -1) {
       wkEventHandler(EV_KEY, key, down * (1 + theEvent.isARepeat));
@@ -447,9 +453,11 @@ void applicationMenuCreate(WKView* view) {
   mainMenuPopulate(view);
 }
 
-int WKMain(WKDrawHandler drawHandler, 
+int WKMain(WKSizeHandler sizeHandler,
+	   WKDrawHandler drawHandler, 
            WKEventHandler eventHandler,
            WKTickHandler tickHandler) {
+  wkSizeHandler = sizeHandler;
   wkDrawHandler = drawHandler;
   wkEventHandler = eventHandler;
   wkTickHandler = tickHandler;

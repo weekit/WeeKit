@@ -15,6 +15,9 @@ use std::sync::{Arc, Mutex};
 
 /// Specifies required application capabilities.
 pub trait Application {
+    /// Resizes the current application screen.
+    fn size(&mut self, width: u32, height: u32) -> ();
+
     /// Draws the current application screen.
     fn draw(&mut self, width: u32, height: u32) -> ();
 
@@ -27,12 +30,13 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
     unsafe {
         APPLICATION = Some(Arc::new(Mutex::new(application)));
         INPUT_LISTENER = Some(input::Listener::new());
-        return WKMain(draw_handler, input_handler, tick_handler);
+        return WKMain(size_handler, draw_handler, input_handler, tick_handler);
     }
 }
 
 extern "C" {
     fn WKMain(
+        s: extern "C" fn(u32, u32) -> (),
         f: extern "C" fn(u32, u32) -> (),
         e: extern "C" fn(u16, u16, i32) -> (),
         t: extern "C" fn() -> (),
@@ -40,6 +44,18 @@ extern "C" {
 }
 
 static mut APPLICATION: Option<Arc<Mutex<Application>>> = None;
+
+extern "C" fn size_handler(width: u32, height: u32) -> () {
+    unsafe {
+        match APPLICATION {
+            Some(ref arc) => {
+                let arc = arc.clone();
+                arc.lock().unwrap().size(width, height);
+            }
+            None => {}
+        }
+    }
+}
 
 extern "C" fn draw_handler(width: u32, height: u32) -> () {
     unsafe {
