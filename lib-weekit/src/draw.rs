@@ -1,7 +1,7 @@
 //! Utilities for drawing text and shapes.
 
-use openvg::*;
 use font::*;
+use openvg::*;
 
 /// Represents a drawing area.
 pub struct Canvas {
@@ -498,6 +498,10 @@ pub fn ellipse(x: VGfloat, y: VGfloat, w: VGfloat, h: VGfloat) {
 /// Makes a circle at the specified location and dimensions.
 pub fn circle(x: VGfloat, y: VGfloat, r: VGfloat) {
     ellipse(x, y, r, r);
+}
+
+pub fn square(x: VGfloat, y: VGfloat, r: VGfloat) {
+    rect(x, y, r, r);
 }
 
 /// Makes an elliptical arc at the specified location and dimensions.

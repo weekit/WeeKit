@@ -4,38 +4,47 @@ extern crate weekit;
 use weekit::*;
 
 use rand::Rng;
+use std::collections::HashMap;
 
 const S: usize = 10;
 const W: usize = 5 * S;
 const H: usize = 3 * S;
 
+const SHIP: f32 = 20.0;
+const ROCK: f32 = 50.0;
+const SHOT: f32 = 3.0;
+
+const ROCKS: usize = 1;
 const TURN: f32 = 10.0;
 const ACCELERATION: f32 = 1.0;
+const SHOT_LIFETIME: i32 = 40;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Coordinate {
     x: f32,
     y: f32,
 }
 
 /// An object that can move in space.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Body {
     position: Coordinate,
     velocity: Coordinate,
+    radius: f32,
 }
 
 impl Body {
-    fn new() -> Body {
+    fn new(radius: f32) -> Body {
         Body {
             position: Coordinate { x: 0.0, y: 0.0 },
             velocity: Coordinate { x: 0.0, y: 0.0 },
+            radius: radius,
         }
     }
-    fn accelerate(&mut self, heading: f32) {
+    fn accelerate(&mut self, rate: f32, heading: f32) {
         let rad = heading / 180.0 * 3.141529;
-        let dx = ACCELERATION * -rad.sin();
-        let dy = ACCELERATION * rad.cos();
+        let dx = rate * ACCELERATION * -rad.sin();
+        let dy = rate * ACCELERATION * rad.cos();
         self.velocity.x += dx;
         self.velocity.y += dy;
     }
@@ -53,19 +62,23 @@ impl Body {
             self.position.y -= y1 - y0;
         }
     }
+    fn intersects(&self, other: &Body) -> bool {
+        let dx = self.position.x - other.position.x;
+        let dy = self.position.y - other.position.y;
+        let dr = self.radius + other.radius;
+        dx * dx + dy * dy < dr * dr
+    }
 }
 
 #[derive(Debug)]
 struct Rock {
     body: Body,
-    radius: f32,
 }
 
 impl Rock {
     fn new() -> Rock {
         Rock {
-            body: Body::new(),
-            radius: 100.0,
+            body: Body::new(ROCK),
         }
     }
 }
@@ -80,20 +93,22 @@ enum Direction {
     Backward,
 }
 
+#[derive(Debug)]
 struct Shot {
     body: Body,
-    radius: f32,
+    age: i32,
 }
 
 impl Shot {
     fn new() -> Shot {
         Shot {
-            body: Body::new(),
-            radius: 10.0,
+            body: Body::new(SHOT),
+            age: 0,
         }
     }
 }
 
+#[derive(Debug)]
 struct Ship {
     body: Body,
     heading: f32,
@@ -102,7 +117,7 @@ struct Ship {
 impl Ship {
     fn new() -> Ship {
         Ship {
-            body: Body::new(),
+            body: Body::new(SHIP),
             heading: 0.0,
         }
     }
@@ -119,9 +134,17 @@ impl Ship {
     }
     fn accelerate(&mut self, direction: Direction) {
         match direction {
-            Direction::Forward => self.body.accelerate(self.heading),
-            Direction::Backward => self.body.accelerate((self.heading + 180.0) % 360.0),
+            Direction::Forward => self.body.accelerate(1.0, self.heading),
+            Direction::Backward => self.body.accelerate(1.0, (self.heading + 180.0) % 360.0),
         }
+    }
+    fn shoot(&self) -> Shot {
+        let mut s = Shot::new();
+        let r = s.body.radius;
+        s.body = self.body.clone();
+        s.body.radius = r;
+        s.body.accelerate(10.0, self.heading);
+        s
     }
 }
 
@@ -135,6 +158,10 @@ struct Rocks {
     grid: [[[bool; H]; W]; 2],
     page: usize,
     paused: bool,
+
+    keys: HashMap<u16, u16>,
+
+    rng: rand::ThreadRng, // thread_rng is often the most convenient source of randomness
 }
 
 impl Rocks {
@@ -148,17 +175,23 @@ impl Rocks {
             grid: [[[false; H]; W]; 2],
             page: 0,
             paused: false,
+
+            keys: HashMap::new(),
+            rng: rand::thread_rng(),
         };
         world.reset();
         world
     }
 
+    fn random(&mut self, max: f32) -> f32 {
+        let x: f32 = self.rng.gen(); // random number in range (0, 1)
+        x * max
+    }
+
     fn reset(&mut self) {
-        // thread_rng is often the most convenient source of randomness:
-        let mut rng = rand::thread_rng();
         for j in 0..H {
             for i in 0..W {
-                let x: f64 = rng.gen(); // random number in range (0, 1)
+                let x: f32 = self.rng.gen(); // random number in range (0, 1)
                 self.grid[0][i][j] = x < 0.5;
             }
         }
@@ -170,13 +203,75 @@ impl Rocks {
             return;
         }
 
+        // handle user inputs
+        if self.keys.contains_key(&key::LEFT) {
+            self.ship.rotate(Turn::Left);
+        }
+        if self.keys.contains_key(&key::RIGHT) {
+            self.ship.rotate(Turn::Right);
+        }
+        if self.keys.contains_key(&key::UP) {
+            self.ship.accelerate(Direction::Forward);
+        }
+        if self.keys.contains_key(&key::DOWN) {
+            self.ship.accelerate(Direction::Backward);
+        }
+        if self.keys.contains_key(&key::SPACE) {
+            let c = self.keys[&key::SPACE];
+            if c % 10 == 0 {
+                self.shots.push(self.ship.shoot());
+            }
+            self.keys.insert(key::SPACE, c + 1);
+        }
+
         // move the ship
         self.ship
             .body
             .move_with_bounds(0.0, 0.0, self.width, self.height);
 
-        let next = 1 - self.page;
+        // move the rocks
+        for rock in &mut self.rocks {
+            rock.body
+                .move_with_bounds(0.0, 0.0, self.width, self.height);
+        }
 
+        // move the shots
+        let mut expired = Vec::new();
+        let mut i: usize = 0;
+        for shot in &mut self.shots {
+            shot.age += 1;
+            shot.body
+                .move_with_bounds(0.0, 0.0, self.width, self.height);
+            if shot.age >= SHOT_LIFETIME {
+                expired.push(i);
+            }
+            i = i + 1;
+        }
+        for i in expired.iter().rev() {
+            self.shots.remove(*i);
+        }
+
+        // handle collisions
+        let mut expired = Vec::new();
+        let mut i: usize = 0;
+        for shot in &mut self.shots {
+            let mut collision = false;
+            for rock in &mut self.rocks {
+                if shot.body.intersects(&rock.body) {
+                    collision = true;
+                }
+            }
+            if collision {
+                expired.push(i);
+            }
+            i = i + 1;
+        }
+        for i in expired.iter().rev() {
+            self.shots.remove(*i);
+        }
+
+        // update life
+        let next = 1 - self.page;
         for j in 0..H {
             for i in 0..W {
                 let is_live = self.grid[self.page][i][j];
@@ -221,7 +316,11 @@ impl Rocks {
     }
 
     fn handle_key(&mut self, ev: event::Key) -> () {
-        println!("{:?}", ev);
+        if ev.kind == 1 {
+            self.keys.insert(ev.key, 0);
+        } else if ev.kind == 0 {
+            self.keys.remove(&ev.key);
+        }
         if ev.key == key::A {
             if ev.kind == 1 {
                 self.paused = true;
@@ -229,20 +328,6 @@ impl Rocks {
                 self.paused = false;
                 self.reset();
             }
-        }
-        if ev.key == key::LEFT {
-            println!("key left");
-            self.ship.rotate(Turn::Left);
-        }
-        if ev.key == key::RIGHT {
-            println!("key right");
-            self.ship.rotate(Turn::Right);
-        }
-        if ev.key == key::UP {
-            self.ship.accelerate(Direction::Forward);
-        }
-        if ev.key == key::DOWN {
-            self.ship.accelerate(Direction::Backward);
         }
     }
 
@@ -261,13 +346,13 @@ impl Application for Rocks {
         self.ship.body.position.y = self.height * 0.5;
         // create some rocks at random locations
         self.rocks.clear();
-        let mut rng: rand::ThreadRng = rand::thread_rng();
-        for i in 0..4 {
+        for _ in 0..ROCKS {
             let mut rock = Rock::new();
-            let x: f64 = rng.gen(); // random number in range (0, 1)
-            let y: f64 = rng.gen(); // random number in range (0, 1)
-            rock.body.position.x = ((self.width as f64) * x) as f32;
-            rock.body.position.y = ((self.height as f64) * y) as f32;
+            let w = self.width;
+            let h = self.height;
+            rock.body.position.x = self.random(w);
+            rock.body.position.y = self.random(h);
+            rock.body.accelerate(1.0, self.random(360.0));
             self.rocks.push(rock);
         }
         // clear all shots
@@ -277,20 +362,16 @@ impl Application for Rocks {
     fn draw(&mut self, width: u32, height: u32) -> () {
         let canvas = draw::Canvas::new(width, height);
         canvas.background(64, 0, 0);
-
         // define a rectangle in the middle of the canvas
         let cw = width as f32 / W as f32;
         let ch = height as f32 / H as f32;
         let x0 = 0.5 * (width as f32 - cw * W as f32);
         let y0 = 0.5 * (height as f32 - ch * H as f32);
-
         // draw the square
         draw::fill(8, 8, 8, 1.0);
         draw::rect(x0, y0, cw * W as f32, ch * H as f32);
-
         // draw a grid of inset squares
         draw::fill(64, 64, 64, 1.0);
-
         let inset = cw * 0.1;
         for j in 0..H {
             let yj = y0 + j as f32 * ch;
@@ -301,16 +382,29 @@ impl Application for Rocks {
                 }
             }
         }
-
         // draw the rocks
         draw::fill(255, 255, 255, 0.2);
         draw::stroke(255, 255, 255, 0.5);
         for rock in &self.rocks {
-            draw::circle(rock.body.position.x, rock.body.position.y, rock.radius);
+            draw::circle(
+                rock.body.position.x,
+                rock.body.position.y,
+                2.0 * rock.body.radius,
+            );
+        }
+        // draw the shots
+        draw::fill(255, 0, 0, 0.7);
+        draw::stroke(255, 0, 0, 1.0);
+        for shot in &self.shots {
+            draw::circle(
+                shot.body.position.x,
+                shot.body.position.y,
+                2.0 * shot.body.radius,
+            );
         }
         // draw the ship
-        let sh = 50.0;
-        let sw = 50.0;
+        let sh = self.ship.body.radius;
+        let sw = self.ship.body.radius;
         draw::fill(255, 255, 128, 1.0);
         draw::translate(self.ship.body.position.x, self.ship.body.position.y);
         draw::rotate(self.ship.heading);

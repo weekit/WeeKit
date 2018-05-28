@@ -1,5 +1,5 @@
-use event;
 use Application;
+use event;
 
 use std::sync::Arc;
 use std::sync::Mutex;

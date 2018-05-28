@@ -1,8 +1,8 @@
 //! Representation of OpenVG fonts.
 
-mod deja_vu_serif;
 mod deja_vu_sans;
 mod deja_vu_sans_mono;
+mod deja_vu_serif;
 
 use super::openvg::*;
 
