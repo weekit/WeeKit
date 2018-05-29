@@ -2,6 +2,10 @@
 
 A tiny user interface toolkit for Rust applications.
 
+## Rust
+
+The easiest way to get started with Rust is to install it with [rustup](https://rustup.rs).
+
 ## Raspberry Pi
 
 On Raspberry Pi, requires clang and libjpeg-dev.
