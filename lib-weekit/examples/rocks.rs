@@ -13,8 +13,9 @@ const H: usize = 3 * S;
 const SHIP: f32 = 20.0;
 const ROCK: f32 = 50.0;
 const SHOT: f32 = 3.0;
+const ROCK_MIN: f32 = 13.0;
 
-const ROCKS: usize = 1;
+const ROCKS: usize = 4;
 const TURN: f32 = 10.0;
 const ACCELERATION: f32 = 1.0;
 const SHOT_LIFETIME: i32 = 40;
@@ -70,7 +71,7 @@ impl Body {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Rock {
     body: Body,
 }
@@ -80,6 +81,21 @@ impl Rock {
         Rock {
             body: Body::new(ROCK),
         }
+    }
+
+    fn split(&self) -> Vec<Rock> {
+        let mut v = Vec::new();
+        if self.body.radius > ROCK_MIN {
+            let mut r1 = self.clone();
+            r1.body.radius *= 0.5;
+            r1.body.accelerate(1.0, 90.0);
+            v.push(r1);
+            let mut r2 = self.clone();
+            r2.body.radius *= 0.5;
+            r2.body.accelerate(1.0, 270.0);
+            v.push(r2);
+        }
+        v
     }
 }
 
@@ -252,21 +268,31 @@ impl Rocks {
         }
 
         // handle collisions
-        let mut expired = Vec::new();
+        let mut exploded_shots = Vec::new();
         let mut i: usize = 0;
         for shot in &mut self.shots {
             let mut collision = false;
+            let mut split_rocks = Vec::new();
+            let mut j: usize = 0;
             for rock in &mut self.rocks {
                 if shot.body.intersects(&rock.body) {
                     collision = true;
+                    split_rocks.push(j)
                 }
+                j = j + 1;
+            }
+            for j in split_rocks.iter().rev() {
+                for r in self.rocks[*j].split() {
+                    self.rocks.push(r);
+                }
+                self.rocks.remove(*j);
             }
             if collision {
-                expired.push(i);
+                exploded_shots.push(i);
             }
             i = i + 1;
         }
-        for i in expired.iter().rev() {
+        for i in exploded_shots.iter().rev() {
             self.shots.remove(*i);
         }
 
@@ -383,8 +409,8 @@ impl Application for Rocks {
             }
         }
         // draw the rocks
-        draw::fill(255, 255, 255, 0.2);
-        draw::stroke(255, 255, 255, 0.5);
+        draw::fill(128, 128, 255, 0.7);
+        draw::stroke(255, 255, 255, 0.9);
         for rock in &self.rocks {
             draw::circle(
                 rock.body.position.x,
