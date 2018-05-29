@@ -2,6 +2,8 @@
 
 A tiny user interface toolkit for Rust applications.
 
+## Raspberry Pi
+
 On Raspberry Pi, requires clang and libjpeg-dev.
 
 ```
@@ -26,3 +28,8 @@ KERNEL=="event*",ENV{ID_INPUT_KEYBOARD}=="?*",SYMLINK+="input/keyboard",MODE="04
 ```
 
 After rebooting, you should find /dev/input/touchscreen and /dev/input/keyboard.
+
+## Mac OS X
+
+Mac users, please clone the [AmanithVG SDK](https://github.com/Mazatech/amanithvg-sdk.git) to your Desktop.
+
