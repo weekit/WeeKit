@@ -21,7 +21,7 @@ const ACCELERATION: f32 = 1.0;
 const SHOT_LIFETIME: i32 = 40;
 
 #[derive(Debug, Copy, Clone)]
-struct Coordinate {
+struct Pair {
     x: f32,
     y: f32,
 }
@@ -29,19 +29,20 @@ struct Coordinate {
 /// An object that can move in space.
 #[derive(Debug, Copy, Clone)]
 struct Body {
-    position: Coordinate,
-    velocity: Coordinate,
+    position: Pair,
+    velocity: Pair,
     radius: f32,
 }
 
 impl Body {
     fn new(radius: f32) -> Body {
         Body {
-            position: Coordinate { x: 0.0, y: 0.0 },
-            velocity: Coordinate { x: 0.0, y: 0.0 },
+            position: Pair { x: 0.0, y: 0.0 },
+            velocity: Pair { x: 0.0, y: 0.0 },
             radius: radius,
         }
     }
+
     fn accelerate(&mut self, rate: f32, heading: f32) {
         let rad = heading / 180.0 * 3.141529;
         let dx = rate * ACCELERATION * rad.sin();
@@ -49,6 +50,7 @@ impl Body {
         self.velocity.x += dx;
         self.velocity.y += dy;
     }
+
     fn move_with_bounds(&mut self, x0: f32, y0: f32, x1: f32, y1: f32) {
         self.position.x += self.velocity.x;
         self.position.y += self.velocity.y;
@@ -63,6 +65,7 @@ impl Body {
             self.position.y -= y1 - y0;
         }
     }
+
     fn intersects(&self, other: &Body) -> bool {
         let dx = self.position.x - other.position.x;
         let dy = self.position.y - other.position.y;
@@ -83,7 +86,7 @@ impl Rock {
         }
     }
 
-    fn split(&self, vector: Coordinate) -> Vec<Rock> {
+    fn explode(&self, vector: Pair) -> Vec<Rock> {
         let mut v = Vec::new();
         if self.body.radius > ROCK_MIN {
             let mut incoming_heading = (vector.x / vector.y).atan() * 180.0 / 3.1415;
@@ -100,7 +103,6 @@ impl Rock {
             if h2 < 0.0 {
                 h2 += 360.0;
             }
-
             let mag = (vector.x * vector.x + vector.y * vector.y).sqrt();
             let split_x = -vector.y / mag * self.body.radius * 0.5;
             let split_y = vector.x / mag * self.body.radius * 0.5;
@@ -115,7 +117,6 @@ impl Rock {
             r2.body.position.x -= split_x;
             r2.body.position.y -= split_y;
             r2.body.accelerate(1.0, h2);
-
             v.push(r2);
         }
         v
@@ -291,6 +292,26 @@ impl Rocks {
         }
 
         // handle collisions
+        let mut collision = false;
+        let mut split_rocks = Vec::new();
+        let mut j: usize = 0;
+        for rock in &mut self.rocks {
+            if self.ship.body.intersects(&rock.body) {
+                collision = true;
+                split_rocks.push(j);
+            }
+            j = j + 1;
+        }
+        for j in split_rocks.iter().rev() {
+            for r in self.rocks[*j].explode(self.ship.body.velocity) {
+                self.rocks.push(r);
+            }
+            self.rocks.remove(*j);
+        }
+        if collision {
+            self.center_ship();
+        }
+
         let mut exploded_shots = Vec::new();
         let mut i: usize = 0;
         for shot in &mut self.shots {
@@ -305,7 +326,7 @@ impl Rocks {
                 j = j + 1;
             }
             for j in split_rocks.iter().rev() {
-                for r in self.rocks[*j].split(shot.body.velocity) {
+                for r in self.rocks[*j].explode(shot.body.velocity) {
                     self.rocks.push(r);
                 }
                 self.rocks.remove(*j);
@@ -383,6 +404,14 @@ impl Rocks {
     fn handle_tick(&mut self) -> () {
         self.update();
     }
+
+    fn center_ship(&mut self) -> () {
+        self.ship.body.position.x = self.width * 0.5;
+        self.ship.body.position.y = self.height * 0.5;
+        self.ship.body.velocity.x = 0.0;
+        self.ship.body.velocity.y = 0.0;
+        self.ship.heading = 0.0;
+    }
 }
 
 impl Application for Rocks {
@@ -391,8 +420,7 @@ impl Application for Rocks {
         self.width = width as f32;
         self.height = height as f32;
         // center the ship
-        self.ship.body.position.x = self.width * 0.5;
-        self.ship.body.position.y = self.height * 0.5;
+        self.center_ship();
         // create some rocks at random locations
         self.rocks.clear();
         for _ in 0..ROCKS {
