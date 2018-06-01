@@ -44,7 +44,7 @@ impl Body {
     }
     fn accelerate(&mut self, rate: f32, heading: f32) {
         let rad = heading / 180.0 * 3.141529;
-        let dx = rate * ACCELERATION * -rad.sin();
+        let dx = rate * ACCELERATION * rad.sin();
         let dy = rate * ACCELERATION * rad.cos();
         self.velocity.x += dx;
         self.velocity.y += dy;
@@ -83,16 +83,39 @@ impl Rock {
         }
     }
 
-    fn split(&self) -> Vec<Rock> {
+    fn split(&self, vector: Coordinate) -> Vec<Rock> {
         let mut v = Vec::new();
         if self.body.radius > ROCK_MIN {
+            let mut incoming_heading = (vector.x / vector.y).atan() * 180.0 / 3.1415;
+            if vector.y < 0.0 {
+                incoming_heading += 180.0;
+            } else if vector.x < 0.0 {
+                incoming_heading += 360.0;
+            }
+            let mut h1 = incoming_heading - 90.0;
+            if h1 > 360.0 {
+                h1 -= 360.0;
+            }
+            let mut h2 = incoming_heading + 90.0;
+            if h2 < 0.0 {
+                h2 += 360.0;
+            }
+
+            let mag = (vector.x * vector.x + vector.y * vector.y).sqrt();
+            let split_x = -vector.y / mag * self.body.radius * 0.5;
+            let split_y = vector.x / mag * self.body.radius * 0.5;
             let mut r1 = self.clone();
             r1.body.radius *= 0.5;
-            r1.body.accelerate(1.0, 90.0);
+            r1.body.position.x += split_x;
+            r1.body.position.y += split_y;
+            r1.body.accelerate(1.0, h1);
             v.push(r1);
             let mut r2 = self.clone();
             r2.body.radius *= 0.5;
-            r2.body.accelerate(1.0, 270.0);
+            r2.body.position.x -= split_x;
+            r2.body.position.y -= split_y;
+            r2.body.accelerate(1.0, h2);
+
             v.push(r2);
         }
         v
@@ -139,8 +162,8 @@ impl Ship {
     }
     fn rotate(&mut self, turn: Turn) {
         match turn {
-            Turn::Right => self.heading -= TURN,
-            Turn::Left => self.heading += TURN,
+            Turn::Right => self.heading += TURN,
+            Turn::Left => self.heading -= TURN,
         }
         if self.heading > 360.0 {
             self.heading -= 360.0;
@@ -282,7 +305,7 @@ impl Rocks {
                 j = j + 1;
             }
             for j in split_rocks.iter().rev() {
-                for r in self.rocks[*j].split() {
+                for r in self.rocks[*j].split(shot.body.velocity) {
                     self.rocks.push(r);
                 }
                 self.rocks.remove(*j);
@@ -433,7 +456,7 @@ impl Application for Rocks {
         let sw = self.ship.body.radius;
         draw::fill(255, 255, 128, 1.0);
         draw::translate(self.ship.body.position.x, self.ship.body.position.y);
-        draw::rotate(self.ship.heading);
+        draw::rotate(-self.ship.heading);
         let x: [f32; 4] = [0.0, 0.5 * sw, 0.0, -0.5 * sw];
         let y: [f32; 4] = [0.5 * sh, -0.5 * sh, 0.0, -0.5 * sh];
         draw::polygon(&x, &y, 4);
