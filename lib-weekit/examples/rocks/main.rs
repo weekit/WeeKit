@@ -1,192 +1,27 @@
 extern crate rand;
-extern crate weekit;
+use rand::Rng;
 
+extern crate weekit;
 use weekit::*;
 
-use rand::Rng;
+mod body;
+mod rock;
+mod ship;
+mod shot;
+
+use body::{Direction, Turn};
+use rock::Rock;
+use ship::Ship;
+use shot::Shot;
+
 use std::collections::HashMap;
 
 const S: usize = 10;
 const W: usize = 5 * S;
 const H: usize = 3 * S;
 
-const SHIP: f32 = 20.0;
-const ROCK: f32 = 50.0;
-const SHOT: f32 = 3.0;
-const ROCK_MIN: f32 = 13.0;
-
 const ROCKS: usize = 4;
-const TURN: f32 = 10.0;
-const ACCELERATION: f32 = 1.0;
 const SHOT_LIFETIME: i32 = 40;
-
-#[derive(Debug, Copy, Clone)]
-struct Pair {
-    x: f32,
-    y: f32,
-}
-
-/// An object that can move in space.
-#[derive(Debug, Copy, Clone)]
-struct Body {
-    position: Pair,
-    velocity: Pair,
-    radius: f32,
-}
-
-impl Body {
-    fn new(radius: f32) -> Body {
-        Body {
-            position: Pair { x: 0.0, y: 0.0 },
-            velocity: Pair { x: 0.0, y: 0.0 },
-            radius: radius,
-        }
-    }
-
-    fn accelerate(&mut self, rate: f32, heading: f32) {
-        let rad = heading / 180.0 * 3.141529;
-        let dx = rate * ACCELERATION * rad.sin();
-        let dy = rate * ACCELERATION * rad.cos();
-        self.velocity.x += dx;
-        self.velocity.y += dy;
-    }
-
-    fn move_with_bounds(&mut self, x0: f32, y0: f32, x1: f32, y1: f32) {
-        self.position.x += self.velocity.x;
-        self.position.y += self.velocity.y;
-        if self.position.x <= x0 {
-            self.position.x += x1 - x0;
-        } else if self.position.x >= x1 {
-            self.position.x -= x1 - x0;
-        }
-        if self.position.y <= y0 {
-            self.position.y += y1 - y0;
-        } else if self.position.y >= y1 {
-            self.position.y -= y1 - y0;
-        }
-    }
-
-    fn intersects(&self, other: &Body) -> bool {
-        let dx = self.position.x - other.position.x;
-        let dy = self.position.y - other.position.y;
-        let dr = self.radius + other.radius;
-        dx * dx + dy * dy < dr * dr
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-struct Rock {
-    body: Body,
-}
-
-impl Rock {
-    fn new() -> Rock {
-        Rock {
-            body: Body::new(ROCK),
-        }
-    }
-
-    fn explode(&self, vector: Pair) -> Vec<Rock> {
-        let mut v = Vec::new();
-        if self.body.radius > ROCK_MIN {
-            let mut incoming_heading = (vector.x / vector.y).atan() * 180.0 / 3.1415;
-            if vector.y < 0.0 {
-                incoming_heading += 180.0;
-            } else if vector.x < 0.0 {
-                incoming_heading += 360.0;
-            }
-            let mut h1 = incoming_heading - 90.0;
-            if h1 > 360.0 {
-                h1 -= 360.0;
-            }
-            let mut h2 = incoming_heading + 90.0;
-            if h2 < 0.0 {
-                h2 += 360.0;
-            }
-            let mag = (vector.x * vector.x + vector.y * vector.y).sqrt();
-            let split_x = -vector.y / mag * self.body.radius * 0.5;
-            let split_y = vector.x / mag * self.body.radius * 0.5;
-            let mut r1 = self.clone();
-            r1.body.radius *= 0.5;
-            r1.body.position.x += split_x;
-            r1.body.position.y += split_y;
-            r1.body.accelerate(1.0, h1);
-            v.push(r1);
-            let mut r2 = self.clone();
-            r2.body.radius *= 0.5;
-            r2.body.position.x -= split_x;
-            r2.body.position.y -= split_y;
-            r2.body.accelerate(1.0, h2);
-            v.push(r2);
-        }
-        v
-    }
-}
-
-enum Turn {
-    Right,
-    Left,
-}
-
-enum Direction {
-    Forward,
-    Backward,
-}
-
-#[derive(Debug)]
-struct Shot {
-    body: Body,
-    age: i32,
-}
-
-impl Shot {
-    fn new() -> Shot {
-        Shot {
-            body: Body::new(SHOT),
-            age: 0,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Ship {
-    body: Body,
-    heading: f32,
-}
-
-impl Ship {
-    fn new() -> Ship {
-        Ship {
-            body: Body::new(SHIP),
-            heading: 0.0,
-        }
-    }
-    fn rotate(&mut self, turn: Turn) {
-        match turn {
-            Turn::Right => self.heading += TURN,
-            Turn::Left => self.heading -= TURN,
-        }
-        if self.heading > 360.0 {
-            self.heading -= 360.0;
-        } else if self.heading < 0.0 {
-            self.heading += 360.0;
-        }
-    }
-    fn accelerate(&mut self, direction: Direction) {
-        match direction {
-            Direction::Forward => self.body.accelerate(1.0, self.heading),
-            Direction::Backward => self.body.accelerate(1.0, (self.heading + 180.0) % 360.0),
-        }
-    }
-    fn shoot(&self) -> Shot {
-        let mut s = Shot::new();
-        let r = s.body.radius;
-        s.body = self.body.clone();
-        s.body.radius = r;
-        s.body.accelerate(10.0, self.heading);
-        s
-    }
-}
 
 struct Rocks {
     ship: Ship,
