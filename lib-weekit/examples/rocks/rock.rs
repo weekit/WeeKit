@@ -15,7 +15,11 @@ impl Rock {
         }
     }
 
-    pub fn explode(&self, vector: Pair) -> Vec<Rock> {
+    pub fn explode(&self, vector_in: Pair) -> Vec<Rock> {
+        let mut vector = vector_in;
+        if vector.x == 0.0 && vector.y == 0.0 {
+            vector = self.body.velocity;
+        }
         let mut v = Vec::new();
         if self.body.radius > ROCK_MIN {
             let mut incoming_heading = (vector.x / vector.y).atan() * 180.0 / 3.1415;
