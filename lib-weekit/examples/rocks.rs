@@ -340,6 +340,10 @@ impl Rocks {
             self.shots.remove(*i);
         }
 
+        if self.rocks.len() == 0 {
+            self.spawn_rocks();
+        }
+
         // update life
         let next = 1 - self.page;
         for j in 0..H {
@@ -412,16 +416,8 @@ impl Rocks {
         self.ship.body.velocity.y = 0.0;
         self.ship.heading = 0.0;
     }
-}
 
-impl Application for Rocks {
-    /// Set the size of the game world.
-    fn size(&mut self, width: u32, height: u32) -> () {
-        self.width = width as f32;
-        self.height = height as f32;
-        // center the ship
-        self.center_ship();
-        // create some rocks at random locations
+    fn spawn_rocks(&mut self) -> () {
         self.rocks.clear();
         for _ in 0..ROCKS {
             let mut rock = Rock::new();
@@ -432,6 +428,18 @@ impl Application for Rocks {
             rock.body.accelerate(1.0, self.random(360.0));
             self.rocks.push(rock);
         }
+    }
+}
+
+impl Application for Rocks {
+    /// Set the size of the game world.
+    fn size(&mut self, width: u32, height: u32) -> () {
+        self.width = width as f32;
+        self.height = height as f32;
+        // center the ship
+        self.center_ship();
+        // create some rocks at random locations
+        self.spawn_rocks();
         // clear all shots
         self.shots.clear();
     }
