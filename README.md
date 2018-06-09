@@ -90,3 +90,16 @@ Currently this is done `Makefile.macOS`, which also builds a shared library cont
 platform-specific helper functions including a Cocoa main event loop. WeeKit applications
 are called from this event loop using exposed functions with C linkage that call functions
 of the WeeKit Application trait.
+
+# Examples
+
+The [rust/weekit/examples](rust/weekit/examples) directory contains a few examples.
+One of the more interesting ones is [rocks](rust/weekit/examples/rocks), a 
+simple Asteroids-style arcade game that runs on macOS and Raspberry Pi.
+
+To build on macOS, make sure that `EXAMPLE=rocks` is set in `Makefile.macOS`,
+and then use `make -f Makefile.macOS` to build the demo application, which
+you can then run from the command-line with `open Demo.app`.
+
+![rocks example](screenshots/rocks.png)
+ 
