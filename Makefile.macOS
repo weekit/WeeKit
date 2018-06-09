@@ -47,11 +47,11 @@ app: libs
 	cp platform/macOS/tutorial.icns ${APP}/Contents/Resources
 	cp lib/*.dylib ${APP}/Contents/dylibs
 	# Build and install the main (Rust) binary.
-	cd lib-weekit; cargo fmt; cargo build --example ${EXAMPLE}
-	cp lib-weekit/target/debug/examples/${EXAMPLE} ${APP}/Contents/MacOS/Demo
+	cd rust/weekit; cargo fmt; cargo build --example ${EXAMPLE}
+	cp rust/weekit/target/debug/examples/${EXAMPLE} ${APP}/Contents/MacOS/Demo
 	install_name_tool -add_rpath "@executable_path/../dylibs" ${APP}/Contents/MacOS/Demo
 
 clean:
-	cd lib-weekit; cargo clean
-	cd lib-svgkit; cargo clean
+	cd rust/weekit; cargo clean
+	cd rust/svg; cargo clean
 	rm -rf ${APP} lib
