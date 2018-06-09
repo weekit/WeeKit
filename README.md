@@ -75,6 +75,10 @@ On macOS, WeeKit uses the [AmanithVG SDK](https://github.com/Mazatech/amanithvg-
 OpenVG support. Download it into the [third-party](third-party) directory by running
 [third-party/RUNME-MACOS.sh](third-party/RUNME-MACOS.sh) in [third-party](third-party).
 
+WeeKit on macOS also requires [libjpeg](https://en.wikipedia.org/wiki/Libjpeg). 
+We build it from source downloaded from the [Independent JPEG Group](http://www.ijg.org/)
+and currently use `jpegsrc.v9c.tar.gz`, available in the [files](http://www.ijg.org/files) area.
+
 ## Make on macOS
 
 To build with `make`, link `Makefile.macOS` with `ln -s Makefile.macOS Makefile`.
