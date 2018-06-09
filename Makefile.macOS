@@ -1,6 +1,4 @@
-#!/bin/sh
-
-SDK=~/Desktop/amanithvg-sdk
+SDK=./third-party/amanithvg-sdk
 
 APP=Demo.app
 
@@ -14,13 +12,13 @@ lib/libAmanithVG.4.dylib: ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dyl
 	mkdir -p lib
 	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib lib
 
-lib/libplatform.dylib: platform/common/shapes.c platform/osx/platform.m
+lib/libplatform.dylib: platform/common/shapes.c platform/macOS/platform.m
 	mkdir -p lib
 	# Build libplatform.
 	clang \
 		platform/common/shapes.c \
-		platform/osx/platform.m \
-		-I platform/osx \
+		platform/macOS/platform.m \
+		-I platform/macOS \
 		-g \
 		-I ${SDK}/include \
 		-L ${SDK}/lib/macosx/ub/gle/standalone \
@@ -45,8 +43,8 @@ app: libs
 	mkdir -p ${APP}/Contents/MacOS
 	mkdir -p ${APP}/Contents/dylibs
 	mkdir -p ${APP}/Contents/Resources
-	cp platform/osx/Info.plist ${APP}/Contents
-	cp platform/osx/tutorial.icns ${APP}/Contents/Resources
+	cp platform/macOS/Info.plist ${APP}/Contents
+	cp platform/macOS/tutorial.icns ${APP}/Contents/Resources
 	cp lib/*.dylib ${APP}/Contents/dylibs
 	# Build and install the main (Rust) binary.
 	cd lib-weekit; cargo fmt; cargo build --example ${EXAMPLE}

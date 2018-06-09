@@ -1,5 +1,3 @@
-#!/bin/sh
-
 all:	app
 
 libs:	lib/libplatform.so
