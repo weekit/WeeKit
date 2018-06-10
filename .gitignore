@@ -2,3 +2,5 @@
 Cargo.lock
 /target/
 **/*.rs.bk
+Makefile
+third-party/amanithvg-sdk

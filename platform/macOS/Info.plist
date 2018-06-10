@@ -5,19 +5,19 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>Demo</string>
+    <string>{{NAME_UPPER}}</string>
     <key>CFBundleExecutable</key>
-    <string>Demo</string>
+    <string>{{NAME_UPPER}}</string>
     <key>CFBundleGetInfoString</key>
-    <string>com.radtastical.demo</string>
+    <string>weekit.{{NAME_LOWER}}</string>
     <key>CFBundleIconFile</key>
     <string>tutorial.icns</string>
     <key>CFBundleIdentifier</key>
-    <string>com.radtastical.demo</string>
+    <string>weekit.{{NAME_LOWER}}</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Demo</string>
+    <string>{{NAME_UPPER}}</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -27,6 +27,6 @@
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright (C) 2018 Radtastical Inc.</string>
+    <string>Copyright (C) 2018 The WeeKit Authors.</string>
 </dict>
 </plist>

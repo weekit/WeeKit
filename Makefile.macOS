@@ -1,10 +1,6 @@
 SDK=./third-party/amanithvg-sdk
 
-APP=Demo.app
-
-EXAMPLE=rocks
-
-all:	app
+all:	rocks hello life colors
 
 libs:	lib/libAmanithVG.4.dylib lib/libplatform.dylib
 
@@ -38,20 +34,18 @@ lib/libplatform.dylib: platform/common/shapes.c platform/macOS/platform.m
 		-o lib/libplatform.dylib
 	install_name_tool -id "@rpath/../dylibs/libplatform.dylib" lib/libplatform.dylib 
 
-app: libs
-	# Build the .app bundle.
-	mkdir -p ${APP}/Contents/MacOS
-	mkdir -p ${APP}/Contents/dylibs
-	mkdir -p ${APP}/Contents/Resources
-	cp platform/macOS/Info.plist ${APP}/Contents
-	cp platform/macOS/tutorial.icns ${APP}/Contents/Resources
-	cp lib/*.dylib ${APP}/Contents/dylibs
-	# Build and install the main (Rust) binary.
-	cd rust/weekit; cargo fmt; cargo build --example ${EXAMPLE}
-	cp rust/weekit/target/debug/examples/${EXAMPLE} ${APP}/Contents/MacOS/Demo
-	install_name_tool -add_rpath "@executable_path/../dylibs" ${APP}/Contents/MacOS/Demo
+rocks: libs
+	tools/build.macOS rocks
 
+hello: libs
+	tools/build.macOS hello
+
+life: libs
+	tools/build.macOS life
+
+colors: libs
+	tools/build.macOS colors
 clean:
 	cd rust/weekit; cargo clean
 	cd rust/svg; cargo clean
-	rm -rf ${APP} lib
+	rm -rf lib *.app

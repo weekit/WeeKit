@@ -26,8 +26,8 @@ impl<'a> Application for Demo<'a> {
             None => self.load_fonts(),
         }
 
-        let screen = display::Screen::new(width, height);
-        screen.background((self.touch_count * 4) % 256, 0, 0);
+        let canvas = draw::Canvas::new(width, height);
+        canvas.background((self.touch_count * 4) % 256, 0, 0);
 
         draw::fill(44, 77, (128 + 4 * self.touch_count) % 256, 1.0); // Big blue marble
         draw::circle(width as f32 / 2.0, 0 as f32, width as f32); // The "world"
@@ -50,8 +50,11 @@ impl<'a> Application for Demo<'a> {
         draw::stroke(255, 255, 255, 1.0);
     }
 
-    fn input(&mut self, ev: &event::Event) -> () {
-        self.touch_count += 1;
+    fn handle(&mut self, ev: &event::Event) {
+        match ev {
+            &event::Event::Touch(_t, _) => self.touch_count += 1,
+            _default => {}
+        }
     }
 }
 

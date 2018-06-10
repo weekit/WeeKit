@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 /// Specifies required application capabilities.
 pub trait Application {
     /// Resizes the current application screen.
-    fn size(&mut self, width: u32, height: u32) -> ();
+    fn size(&mut self, _width: u32, _height: u32) -> () {}
 
     /// Draws the current application screen.
     fn draw(&mut self, width: u32, height: u32) -> ();

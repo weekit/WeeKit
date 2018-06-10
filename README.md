@@ -97,9 +97,9 @@ The [rust/weekit/examples](rust/weekit/examples) directory contains a few exampl
 One of the more interesting ones is [rocks](rust/weekit/examples/rocks), a 
 simple Asteroids-style arcade game that runs on macOS and Raspberry Pi.
 
-To build on macOS, make sure that `EXAMPLE=rocks` is set in `Makefile.macOS`,
-and then use `make -f Makefile.macOS` to build the demo application, which
-you can then run from the command-line with `open Demo.app`.
+To build on macOS, make sure that you've made `Makefile` link to `Makefile.macOS`,
+and then use `make rocks` to build the rocks application, which
+you can then run from the command-line with `open Rocks.app`.
 
 ![rocks example](screenshots/rocks.png)
  

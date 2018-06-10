@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# This script builds a macOS application containing a WeeKit example.
+#
+
+# The example name should be passed in as the first argument.
+# It is assumed to be lower-case.
+NAME_LOWER=$1
+
+# The macOS application name is capitalized.
+# Capitalize the example name.
+NAME_UPPER=`echo "${NAME_LOWER}" | perl -ne 'print ucfirst'`
+
+# Build the main (Rust) binary.
+cd rust/weekit; cargo fmt; cargo build --example ${NAME_LOWER}; cd ../..;
+
+# Build the .app bundle.
+APP=${NAME_UPPER}.app
+mkdir -p ${APP}/Contents/MacOS
+mkdir -p ${APP}/Contents/dylibs
+mkdir -p ${APP}/Contents/Resources
+cp platform/macOS/Info.plist ${APP}/Contents
+perl -pi -e "s/{{NAME_UPPER}}/${NAME_UPPER}/" ${APP}/Contents/Info.plist
+perl -pi -e "s/{{NAME_LOWER}}/${NAME_LOWER}/" ${APP}/Contents/Info.plist
+cp platform/macOS/tutorial.icns ${APP}/Contents/Resources
+cp lib/*.dylib ${APP}/Contents/dylibs
+cp rust/weekit/target/debug/examples/${NAME_LOWER} ${APP}/Contents/MacOS/${NAME_UPPER}
+install_name_tool -add_rpath "@executable_path/../dylibs" ${APP}/Contents/MacOS/${NAME_UPPER}
