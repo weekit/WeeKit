@@ -41,7 +41,6 @@ WKTickHandler wkTickHandler;
 // default window dimensions
 #define INITIAL_WINDOW_WIDTH 800
 #define INITIAL_WINDOW_HEIGHT 480
-#define WINDOW_TITLE "WeeKit Demo"
 
 /*****************************************************************
  View (interface)
@@ -470,10 +469,12 @@ int WKMain(WKSizeHandler sizeHandler,
     NSApplication* app = [NSApplication sharedApplication];
     [NSApp setActivationPolicy: NSApplicationActivationPolicyRegular];
 
+    NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+
     // create the window
     NSWindow* window = [[NSWindow alloc] initWithContentRect:frame styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer: TRUE];
     [window setAcceptsMouseMovedEvents:YES];
-    [window setTitle: @ WINDOW_TITLE];
+    [window setTitle: appName];
 
     // create the OpenGL view
     WKView* view = [[WKView alloc] initWithFrame: frame];
