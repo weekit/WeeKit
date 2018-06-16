@@ -23,6 +23,37 @@ const H: usize = 3 * S;
 const ROCKS: usize = 4;
 const SHOT_LIFETIME: i32 = 40;
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ButtonState {
+    Idle,
+    Pressed,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Button {
+    state: ButtonState,
+    x : i32,
+    y : i32,
+    w : i32,
+    h : i32,
+}
+
+impl Button {
+    /// Creates a new Button.
+    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Button {
+	Button {
+	    x: x,
+	    y: y,
+	    w: w,
+	    h: h,
+            state: ButtonState::Idle,
+        }
+    }
+    pub fn contains(&self, x: i32, y: i32) -> bool {
+	x >= self.x && y >= self.y && x <= self.x + self.w && y <= self.y + self.h
+    }
+}
+
 struct Rocks {
     ship: Ship,
     shots: Vec<Shot>,
@@ -35,6 +66,7 @@ struct Rocks {
     paused: bool,
 
     keys: HashMap<u16, u16>,
+    buttons: Vec<Button>,
 
     rng: rand::ThreadRng, // thread_rng is often the most convenient source of randomness
 }
@@ -52,6 +84,7 @@ impl Rocks {
             paused: false,
 
             keys: HashMap::new(),
+	    buttons: Vec::new(),
             rng: rand::thread_rng(),
         };
         world.reset();
@@ -222,6 +255,16 @@ impl Rocks {
 
     fn handle_touch(&mut self, ev: event::Touch) -> () {
         println!("{:?}", ev);
+        for button in &mut self.buttons {
+	    if button.contains(ev.x, ev.y) {
+		if ev.kind == 3 {
+		   button.state = ButtonState::Idle;
+                } else if ev.kind == 1 {
+		   button.state = ButtonState::Pressed;
+		}
+		println!("touched {:?}", button);	
+	    }
+        }
     }
 
     fn handle_key(&mut self, ev: event::Key) -> () {
@@ -277,6 +320,21 @@ impl Application for Rocks {
         self.spawn_rocks();
         // clear all shots
         self.shots.clear();
+	// recreate all buttons
+	self.buttons.clear();
+	let s = height as i32 / 3;
+	let b_l0 = Button::new(0, 2*s, s, s);
+	let b_r0 = Button::new(width as i32 - s, 2*s, s, s);
+	let b_l1 = Button::new(0, s, s, s);
+	let b_r1 = Button::new(width as i32 - s, s, s, s);
+	let b_l2 = Button::new(0, 0, s, s);
+	let b_r2 = Button::new(width as i32 - s, 0, s, s);
+	self.buttons.push(b_l0);
+	self.buttons.push(b_r0);
+	self.buttons.push(b_l1);
+	self.buttons.push(b_r1);
+	self.buttons.push(b_l2);
+	self.buttons.push(b_r2);
     }
     /// Draw the game world.
     fn draw(&mut self, width: u32, height: u32) -> () {

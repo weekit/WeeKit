@@ -101,7 +101,6 @@ int WKMain(WKSizeHandler sizeHandler,
   	wkDrawHandler(w, h);
   	eglSwapBuffers(state->display, state->surface);
 	handle_input();
-        usleep(25000);
   	wkTickHandler();
   }
   egl_finish();
