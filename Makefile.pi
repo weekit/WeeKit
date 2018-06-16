@@ -19,9 +19,9 @@ lib/libplatform.so:	platform/pi/platform.c platform/pi/inputs.c
 	sudo cp lib/libplatform.so /usr/lib
 
 app:	libs
-	cd lib-weekit; cargo build --example hello
+	cd rust/weekit; cargo build --example rocks
 
 clean:
-	cd lib-weekit; cargo clean
-	cd lib-svgkit; cargo clean
+	cd rust/weekit; cargo clean
+	cd rust/svg; cargo clean
 	rm -rf lib
