@@ -1,6 +1,9 @@
 extern crate rand;
 use rand::Rng;
 
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+
 extern crate weekit;
 use weekit::*;
 
@@ -14,14 +17,56 @@ use rock::Rock;
 use ship::Ship;
 use shot::Shot;
 
-use std::collections::HashMap;
-
 const S: usize = 10;
 const W: usize = 5 * S;
 const H: usize = 3 * S;
 
 const ROCKS: usize = 4;
 const SHOT_LIFETIME: i32 = 40;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum RocksEvent {
+    IsShooting(bool),
+    IsTurningLeft(bool),
+    IsTurningRight(bool),
+    IsThrustingForward(bool),
+    IsThrustingBackward(bool),
+    Tick,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl Point {
+    pub fn new(x: i32, y: i32) -> Point {
+        Point { x: x, y: y }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Rect {
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+}
+
+impl Rect {
+    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Rect {
+        Rect {
+            x: x,
+            y: y,
+            w: w,
+            h: h,
+        }
+    }
+    pub fn contains(&self, p: &Point) -> bool {
+        p.x >= self.x && p.y >= self.y && p.x <= self.x + self.w && p.y <= self.y + self.h
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ButtonState {
@@ -31,26 +76,20 @@ pub enum ButtonState {
 
 #[derive(Copy, Clone, Debug)]
 pub struct Button {
-    state: ButtonState,
-    x : i32,
-    y : i32,
-    w : i32,
-    h : i32,
+    pub frame: Rect,
+    pub state: ButtonState,
 }
 
 impl Button {
     /// Creates a new Button.
     pub fn new(x: i32, y: i32, w: i32, h: i32) -> Button {
-	Button {
-	    x: x,
-	    y: y,
-	    w: w,
-	    h: h,
+        Button {
+            frame: Rect::new(x, y, w, h),
             state: ButtonState::Idle,
         }
     }
-    pub fn contains(&self, x: i32, y: i32) -> bool {
-	x >= self.x && y >= self.y && x <= self.x + self.w && y <= self.y + self.h
+    pub fn contains(&self, p: &Point) -> bool {
+        self.frame.contains(p)
     }
 }
 
@@ -65,14 +104,26 @@ struct Rocks {
     page: usize,
     paused: bool,
 
-    keys: HashMap<u16, u16>,
+    shot_counter: u32,
+
+    is_shooting: bool,
+    is_turning_left: bool,
+    is_turning_right: bool,
+    is_thrusting_forward: bool,
+    is_thrusting_backward: bool,
+
     buttons: Vec<Button>,
 
     rng: rand::ThreadRng, // thread_rng is often the most convenient source of randomness
+
+    tx: Sender<RocksEvent>,
+    rx: Receiver<RocksEvent>,
 }
 
 impl Rocks {
     fn new() -> Rocks {
+        let (tx, rx): (Sender<RocksEvent>, Receiver<RocksEvent>) = mpsc::channel();
+
         let mut world = Rocks {
             ship: Ship::new(),
             shots: Vec::new(),
@@ -83,9 +134,18 @@ impl Rocks {
             page: 0,
             paused: false,
 
-            keys: HashMap::new(),
-	    buttons: Vec::new(),
+            shot_counter: 0,
+
+            is_shooting: false,
+            is_turning_left: false,
+            is_turning_right: false,
+            is_thrusting_forward: false,
+            is_thrusting_backward: false,
+
+            buttons: Vec::new(),
             rng: rand::thread_rng(),
+            tx: tx,
+            rx: rx,
         };
         world.reset();
         world
@@ -112,24 +172,27 @@ impl Rocks {
         }
 
         // handle user inputs
-        if self.keys.contains_key(&key::LEFT) {
+        if self.is_turning_left {
             self.ship.rotate(Turn::Left);
         }
-        if self.keys.contains_key(&key::RIGHT) {
+        if self.is_turning_right {
             self.ship.rotate(Turn::Right);
         }
-        if self.keys.contains_key(&key::UP) {
+        if self.is_thrusting_forward {
             self.ship.accelerate(Direction::Forward);
         }
-        if self.keys.contains_key(&key::DOWN) {
+        if self.is_thrusting_backward {
             self.ship.accelerate(Direction::Backward);
         }
-        if self.keys.contains_key(&key::SPACE) {
-            let c = self.keys[&key::SPACE];
-            if c % 10 == 0 {
+        if self.is_shooting {
+            if self.shot_counter == 0 {
                 self.shots.push(self.ship.shoot());
+                self.shot_counter = 5;
+            } else {
+                self.shot_counter -= 1;
             }
-            self.keys.insert(key::SPACE, c + 1);
+        } else {
+            self.shot_counter = 0;
         }
 
         // move the ship
@@ -256,30 +319,53 @@ impl Rocks {
     fn handle_touch(&mut self, ev: event::Touch) -> () {
         println!("{:?}", ev);
         for button in &mut self.buttons {
-	    if button.contains(ev.x, ev.y) {
-		if ev.kind == 3 {
-		   button.state = ButtonState::Idle;
+            if button.contains(&Point::new(ev.x, ev.y)) {
+                if ev.kind == 3 {
+                    button.state = ButtonState::Idle;
                 } else if ev.kind == 1 {
-		   button.state = ButtonState::Pressed;
-		}
-		println!("touched {:?}", button);	
-	    }
+                    button.state = ButtonState::Pressed;
+                }
+                println!("touched {:?}", button);
+            }
         }
     }
 
     fn handle_key(&mut self, ev: event::Key) -> () {
-        if ev.kind == 1 {
-            self.keys.insert(ev.key, 0);
-        } else if ev.kind == 0 {
-            self.keys.remove(&ev.key);
-        }
-        if ev.key == key::A {
-            if ev.kind == 1 {
-                self.paused = true;
-            } else if ev.kind == 0 {
-                self.paused = false;
-                self.reset();
-            }
+        match ev.key as u16 {
+            key::A => match ev.kind {
+                1 => self.paused = true,
+                0 => {
+                    self.paused = false;
+                    self.reset();
+                }
+                _ => {}
+            },
+            key::UP => match ev.kind {
+                1 => self.is_thrusting_forward = true,
+                0 => self.is_thrusting_forward = false,
+                _ => {}
+            },
+            key::DOWN => match ev.kind {
+                1 => self.is_thrusting_backward = true,
+                0 => self.is_thrusting_backward = false,
+                _ => {}
+            },
+            key::LEFT => match ev.kind {
+                1 => self.is_turning_left = true,
+                0 => self.is_turning_left = false,
+                _ => {}
+            },
+            key::RIGHT => match ev.kind {
+                1 => self.is_turning_right = true,
+                0 => self.is_turning_right = false,
+                _ => {}
+            },
+            key::SPACE => match ev.kind {
+                1 => self.is_shooting = true,
+                0 => self.is_shooting = false,
+                _ => {}
+            },
+            _ => {}
         }
     }
 
@@ -320,21 +406,21 @@ impl Application for Rocks {
         self.spawn_rocks();
         // clear all shots
         self.shots.clear();
-	// recreate all buttons
-	self.buttons.clear();
-	let s = height as i32 / 3;
-	let b_l0 = Button::new(0, 2*s, s, s);
-	let b_r0 = Button::new(width as i32 - s, 2*s, s, s);
-	let b_l1 = Button::new(0, s, s, s);
-	let b_r1 = Button::new(width as i32 - s, s, s, s);
-	let b_l2 = Button::new(0, 0, s, s);
-	let b_r2 = Button::new(width as i32 - s, 0, s, s);
-	self.buttons.push(b_l0);
-	self.buttons.push(b_r0);
-	self.buttons.push(b_l1);
-	self.buttons.push(b_r1);
-	self.buttons.push(b_l2);
-	self.buttons.push(b_r2);
+        // recreate all buttons
+        self.buttons.clear();
+        let s = height as i32 / 3;
+        let b_l0 = Button::new(0, 2 * s, s, s);
+        let b_r0 = Button::new(width as i32 - s, 2 * s, s, s);
+        let b_l1 = Button::new(0, s, s, s);
+        let b_r1 = Button::new(width as i32 - s, s, s, s);
+        let b_l2 = Button::new(0, 0, s, s);
+        let b_r2 = Button::new(width as i32 - s, 0, s, s);
+        self.buttons.push(b_l0);
+        self.buttons.push(b_r0);
+        self.buttons.push(b_l1);
+        self.buttons.push(b_r1);
+        self.buttons.push(b_l2);
+        self.buttons.push(b_r2);
     }
     /// Draw the game world.
     fn draw(&mut self, width: u32, height: u32) -> () {
