@@ -76,21 +76,16 @@ impl Rect {
 }
 
 #[derive(Clone)]
-pub struct Button {
+pub struct Button<T> {
     pub frame: Rect,
-    pub sender: Sender<RocksEvent>,
-    pub down_event: RocksEvent,
-    pub up_event: RocksEvent,
+    pub sender: Sender<T>,
+    pub down_event: T,
+    pub up_event: T,
 }
 
-impl Button {
+impl<T: std::clone::Clone> Button<T> {
     /// Creates a new Button.
-    pub fn new(
-        frame: Rect,
-        sender: Sender<RocksEvent>,
-        down_event: RocksEvent,
-        up_event: RocksEvent,
-    ) -> Button {
+    pub fn new(frame: Rect, sender: Sender<T>, down_event: T, up_event: T) -> Button<T> {
         Button {
             frame: frame,
             sender: sender,
@@ -100,6 +95,18 @@ impl Button {
     }
     pub fn contains(&self, p: &Point) -> bool {
         return self.frame.contains(p);
+    }
+    pub fn handle(&self, ev: &event::Touch) -> bool {
+        if self.contains(&Point::new(ev.x, ev.y)) {
+            if ev.kind == 3 {
+                self.sender.send(self.up_event.clone()).unwrap();;
+            } else if ev.kind == 1 {
+                self.sender.send(self.down_event.clone()).unwrap();;
+            }
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -122,7 +129,7 @@ struct Rocks {
     is_thrusting_forward: bool,
     is_thrusting_backward: bool,
 
-    buttons: Vec<Button>,
+    buttons: Vec<Button<RocksEvent>>,
 
     rng: rand::ThreadRng, // thread_rng is often the most convenient source of randomness
 
@@ -327,14 +334,9 @@ impl Rocks {
     }
 
     fn handle_touch(&mut self, ev: event::Touch) -> () {
-        println!("{:?}", ev);
         for button in &mut self.buttons {
-            if button.contains(&Point::new(ev.x, ev.y)) {
-                if ev.kind == 3 {
-                    button.sender.send(button.up_event).unwrap();;
-                } else if ev.kind == 1 {
-                    button.sender.send(button.down_event).unwrap();;
-                }
+            if button.handle(&ev) {
+                return;
             }
         }
     }
