@@ -26,6 +26,7 @@ fn handle_inputs(filename: &'static str) {
     thread::spawn(move || {
         let mut f = File::open(filename).expect(&("unable to open ".to_owned() + filename));
 
+	// https://stackoverflow.com/questions/25410028/how-to-read-a-struct-from-a-file-in-rust
         let mut input_event: InputEvent = unsafe { mem::zeroed() };
         let input_event_size = mem::size_of::<InputEvent>();
         loop {
