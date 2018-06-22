@@ -26,11 +26,18 @@ const SHOT_LIFETIME: i32 = 40;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RocksEvent {
-    IsShooting(bool),
-    IsTurningLeft(bool),
-    IsTurningRight(bool),
-    IsThrustingForward(bool),
-    IsThrustingBackward(bool),
+    StartShooting,
+    StopShooting,
+    StartTurningLeft,
+    StopTurningLeft,
+    StartTurningRight,
+    StopTurningRight,
+    StartThrustingForward,
+    StopThrustingForward,
+    StartThrustingBackward,
+    StopThrustingBackward,
+    Pause,
+    Resume,
     Tick,
 }
 
@@ -68,28 +75,31 @@ impl Rect {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ButtonState {
-    Idle,
-    Pressed,
-}
-
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone)]
 pub struct Button {
     pub frame: Rect,
-    pub state: ButtonState,
+    pub sender: Sender<RocksEvent>,
+    pub down_event: RocksEvent,
+    pub up_event: RocksEvent,
 }
 
 impl Button {
     /// Creates a new Button.
-    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Button {
+    pub fn new(
+        frame: Rect,
+        sender: Sender<RocksEvent>,
+        down_event: RocksEvent,
+        up_event: RocksEvent,
+    ) -> Button {
         Button {
-            frame: Rect::new(x, y, w, h),
-            state: ButtonState::Idle,
+            frame: frame,
+            sender: sender,
+            down_event: down_event,
+            up_event: up_event,
         }
     }
     pub fn contains(&self, p: &Point) -> bool {
-        self.frame.contains(p)
+        return self.frame.contains(p);
     }
 }
 
@@ -321,11 +331,10 @@ impl Rocks {
         for button in &mut self.buttons {
             if button.contains(&Point::new(ev.x, ev.y)) {
                 if ev.kind == 3 {
-                    button.state = ButtonState::Idle;
+                    button.sender.send(button.up_event).unwrap();;
                 } else if ev.kind == 1 {
-                    button.state = ButtonState::Pressed;
+                    button.sender.send(button.down_event).unwrap();;
                 }
-                println!("touched {:?}", button);
             }
         }
     }
@@ -333,36 +342,33 @@ impl Rocks {
     fn handle_key(&mut self, ev: event::Key) -> () {
         match ev.key as u16 {
             key::A => match ev.kind {
-                1 => self.paused = true,
-                0 => {
-                    self.paused = false;
-                    self.reset();
-                }
+                1 => self.tx.send(RocksEvent::Pause).unwrap(),
+                0 => self.tx.send(RocksEvent::Resume).unwrap(),
                 _ => {}
             },
             key::UP => match ev.kind {
-                1 => self.is_thrusting_forward = true,
-                0 => self.is_thrusting_forward = false,
+                1 => self.tx.send(RocksEvent::StartThrustingForward).unwrap(),
+                0 => self.tx.send(RocksEvent::StopThrustingForward).unwrap(),
                 _ => {}
             },
             key::DOWN => match ev.kind {
-                1 => self.is_thrusting_backward = true,
-                0 => self.is_thrusting_backward = false,
+                1 => self.tx.send(RocksEvent::StartThrustingBackward).unwrap(),
+                0 => self.tx.send(RocksEvent::StopThrustingBackward).unwrap(),
                 _ => {}
             },
             key::LEFT => match ev.kind {
-                1 => self.is_turning_left = true,
-                0 => self.is_turning_left = false,
+                1 => self.tx.send(RocksEvent::StartTurningLeft).unwrap(),
+                0 => self.tx.send(RocksEvent::StopTurningLeft).unwrap(),
                 _ => {}
             },
             key::RIGHT => match ev.kind {
-                1 => self.is_turning_right = true,
-                0 => self.is_turning_right = false,
+                1 => self.tx.send(RocksEvent::StartTurningRight).unwrap(),
+                0 => self.tx.send(RocksEvent::StopTurningRight).unwrap(),
                 _ => {}
             },
             key::SPACE => match ev.kind {
-                1 => self.is_shooting = true,
-                0 => self.is_shooting = false,
+                1 => self.tx.send(RocksEvent::StartShooting).unwrap(),
+                0 => self.tx.send(RocksEvent::StopShooting).unwrap(),
                 _ => {}
             },
             _ => {}
@@ -393,6 +399,49 @@ impl Rocks {
             self.rocks.push(rock);
         }
     }
+
+    fn respond(&mut self, ev: RocksEvent) {
+        match ev {
+            RocksEvent::StartShooting => {
+                self.is_shooting = true;
+            }
+            RocksEvent::StopShooting => {
+                self.is_shooting = false;
+            }
+            RocksEvent::StartTurningLeft => {
+                self.is_turning_left = true;
+            }
+            RocksEvent::StopTurningLeft => {
+                self.is_turning_left = false;
+            }
+            RocksEvent::StartTurningRight => {
+                self.is_turning_right = true;
+            }
+            RocksEvent::StopTurningRight => {
+                self.is_turning_right = false;
+            }
+            RocksEvent::StartThrustingForward => {
+                self.is_thrusting_forward = true;
+            }
+            RocksEvent::StopThrustingForward => {
+                self.is_thrusting_forward = false;
+            }
+            RocksEvent::StartThrustingBackward => {
+                self.is_thrusting_backward = true;
+            }
+            RocksEvent::StopThrustingBackward => {
+                self.is_thrusting_backward = false;
+            }
+            RocksEvent::Pause => {
+                self.paused = true;
+            }
+            RocksEvent::Resume => {
+                self.paused = false;
+                self.reset();
+            }
+            RocksEvent::Tick => {}
+        }
+    }
 }
 
 impl Application for Rocks {
@@ -409,18 +458,42 @@ impl Application for Rocks {
         // recreate all buttons
         self.buttons.clear();
         let s = height as i32 / 3;
-        let b_l0 = Button::new(0, 2 * s, s, s);
-        let b_r0 = Button::new(width as i32 - s, 2 * s, s, s);
-        let b_l1 = Button::new(0, s, s, s);
-        let b_r1 = Button::new(width as i32 - s, s, s, s);
-        let b_l2 = Button::new(0, 0, s, s);
-        let b_r2 = Button::new(width as i32 - s, 0, s, s);
-        self.buttons.push(b_l0);
-        self.buttons.push(b_r0);
-        self.buttons.push(b_l1);
-        self.buttons.push(b_r1);
-        self.buttons.push(b_l2);
-        self.buttons.push(b_r2);
+        self.buttons.push(Button::new(
+            Rect::new(0, 2 * s, s, s),
+            self.tx.clone(),
+            RocksEvent::StartShooting,
+            RocksEvent::StopShooting,
+        ));
+        self.buttons.push(Button::new(
+            Rect::new(width as i32 - s, 2 * s, s, s),
+            self.tx.clone(),
+            RocksEvent::StartThrustingBackward,
+            RocksEvent::StopThrustingBackward,
+        ));
+        self.buttons.push(Button::new(
+            Rect::new(0, s, s, s),
+            self.tx.clone(),
+            RocksEvent::StartTurningLeft,
+            RocksEvent::StopTurningLeft,
+        ));
+        self.buttons.push(Button::new(
+            Rect::new(width as i32 - s, s, s, s),
+            self.tx.clone(),
+            RocksEvent::StartTurningRight,
+            RocksEvent::StopTurningRight,
+        ));
+        self.buttons.push(Button::new(
+            Rect::new(0, 0, s, s),
+            self.tx.clone(),
+            RocksEvent::StartShooting,
+            RocksEvent::StopShooting,
+        ));
+        self.buttons.push(Button::new(
+            Rect::new(width as i32 - s, 0, s, s),
+            self.tx.clone(),
+            RocksEvent::StartThrustingForward,
+            RocksEvent::StopThrustingForward,
+        ));
     }
     /// Draw the game world.
     fn draw(&mut self, width: u32, height: u32) -> () {
@@ -482,6 +555,11 @@ impl Application for Rocks {
             &event::Event::Touch(t, _) => self.handle_touch(t),
             &event::Event::Key(k, _) => self.handle_key(k),
             &event::Event::Tick(_) => self.handle_tick(),
+        }
+        match self.rx.try_recv() {
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            Ok(ev) => self.respond(ev),
+            _ => println!("ok"),
         }
     }
 }
