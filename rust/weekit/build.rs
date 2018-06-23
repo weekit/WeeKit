@@ -13,5 +13,6 @@ fn main() {
         println!("cargo:rustc-link-lib=brcmEGL");
         println!("cargo:rustc-link-lib=brcmGLESv2");
         println!("cargo:rustc-link-lib=brcmOpenVG");
+        println!("cargo:rustc-link-lib=bcm_host");
     }
 }

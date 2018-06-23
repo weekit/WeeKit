@@ -21,6 +21,8 @@ use std::fs::File;
 use std::io::Read;
 use std::mem;
 use std::slice;
+use std::os::raw::c_int;
+use std::os::unix::io::AsRawFd;
 
 #[cfg(target_os = "macos")]
 fn platform() -> String {
@@ -53,6 +55,7 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
 	if cfg!(target_os = "macos") {
             return WKMain(size_handler, draw_handler, input_handler, tick_handler);
 	} else {
+	    bcm_host_init();
 	    let mut w:u32 = 0;
 	    let mut h:u32 = 0;
   	    egl_init(&mut w, &mut h);
@@ -61,7 +64,7 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
 	    listen();
   	    loop  {
         	draw_handler(w, h);
-        	swap_buffers();
+        	egl_swap_buffers();
 		thread::sleep(ten_millis);
         	tick_handler();
   	    }
@@ -78,9 +81,11 @@ extern "C" {
         e: extern "C" fn(u16, u16, i32) -> (),
         t: extern "C" fn() -> (),
     ) -> i64;
+    fn bcm_host_init();
     fn egl_init(w:&mut u32, h:&mut u32);
     fn egl_finish();
-    fn swap_buffers();
+    fn egl_swap_buffers();
+    fn get_input_details(f : c_int);
 }
 
 static mut APPLICATION: Option<Arc<Mutex<Application>>> = None;
@@ -151,7 +156,9 @@ fn listen() {
 fn handle_inputs(filename: &'static str) {
     thread::spawn(move || {
         let mut f = File::open(filename).expect(&("unable to open ".to_owned() + filename));
-
+	unsafe {
+            get_input_details(f.as_raw_fd());
+	}
         // https://stackoverflow.com/questions/25410028/how-to-read-a-struct-from-a-file-in-rust
         let mut input_event: InputEvent = unsafe { mem::zeroed() };
         let input_event_size = mem::size_of::<InputEvent>();
@@ -162,10 +169,6 @@ fn handle_inputs(filename: &'static str) {
                     input_event_size,
                 );
                 f.read_exact(input_event_slice).unwrap();
-                println!(
-                    "{} {} {}",
-                    input_event.kind, input_event.code, input_event.value
-                );
 		input_handler(input_event.kind, input_event.code, input_event.value);
             }
         }

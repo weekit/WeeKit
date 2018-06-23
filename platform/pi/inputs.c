@@ -14,23 +14,9 @@
 #define LONG(x) ((x)/BITS_PER_LONG)
 #define test_bit(bit, array)	((array[LONG(bit)] >> OFF(bit)) & 1)
 
-int touchscreen;
-int keyboard;
-
-int openInputs()
-{
-        if ((touchscreen = open("/dev/input/touchscreen", O_RDONLY)) < 0) {
-                return 1;
-        }
-        if ((keyboard = open("/dev/input/keyboard", O_RDONLY)) < 0) {
-                return 1;
-        }
-	return 0;
-}
-
 char *absval[6] = { "Value", "Min", "Max", "Fuzz", "Flat", "Resolution"};
 
-void getInputDetails(int fd) {
+void get_input_details(int fd) {
 	unsigned short id[4];
         unsigned long bit[EV_MAX][NBITS(KEY_MAX)];
         char name[256] = "Unknown";
@@ -80,64 +66,5 @@ void getInputDetails(int fd) {
                         }
 		}
 	}
-}
-
-//typedef void (*WKEventHandler)(short, short, int);
-//extern WKEventHandler wkEventHandler;
-
-unsigned char has_inputs(int fd) {
-	fd_set rfds;
-        FD_ZERO(&rfds);
-        FD_SET(fd, &rfds);
-
-        struct timeval tv;
-	// don't wait
-        tv.tv_sec = 0;
-        tv.tv_usec = 0;
-
-        int retval = select(fd + 1, &rfds, NULL, NULL, &tv);
-        /* Don't rely on the value of tv now! */
-
-        if (retval == -1) {
-        	perror("select()");
-        } else if (retval) {
-		return 1; /* FD_ISSET(fd, &rfds) will be true. */
-	}
-	return 0;
-}
-
-void handle_inputs(int fd) {
-        /* the events (up to 64 at once) */
-        struct input_event ev[64];
-
-        /* how many bytes were read */
-	size_t rb = read(fd, ev, sizeof(struct input_event)*64);
-
-	int i;
-        for (i = 0; i <  (rb / sizeof(struct input_event)); i++){
-		unsigned short t = ev[i].type;
-		unsigned short c = ev[i].code;
-		int v = ev[i].value;
-		//wkEventHandler(t, c, v);
-	}
-}
-
-void handle_input() {
-  if (has_inputs(touchscreen)) {
-    handle_inputs(touchscreen);
-  }
-  if (has_inputs(keyboard)) {
-    handle_inputs(keyboard);
-  }
-}
-
-int start_input() {
-	if (openInputs() == 1) {
-		perror("error opening touch screen");
-		return -1;
-	}
-	getInputDetails(touchscreen);
-	getInputDetails(keyboard);
-	return 0;
 }
 

@@ -1,4 +1,3 @@
-
 //
 // libshapes: high-level OpenVG API
 // Anthony Starks (ajstarks@gmail.com)
@@ -6,11 +5,7 @@
 // Additional outline / windowing functions
 // Paeryn (github.com/paeryn)
 //
-#include <stdio.h>
-#include <stdlib.h>
-#include <termios.h>
 #include <assert.h>
-#include <jpeglib.h>
 #include "VG/openvg.h"
 #include "VG/vgu.h"
 #include "EGL/egl.h"
@@ -36,22 +31,23 @@ typedef struct {
 
 static STATE_T _state, *state = &_state;	// global graphics state
 static const int MAXFONTPATH = 500;
-static int init_x = 0;		// Initial window position and size
+static int init_x = 0;         // Initial window position and size
 static int init_y = 0;
 static unsigned int init_w = 0;
 static unsigned int init_h = 0;
+ 
 
-void oglinit(STATE_T * state);
+void oglinit();
 
 // init sets the system to its initial state
 void egl_init(int *w, int *h) {
-	bcm_host_init();
+	//bcm_host_init();
 	memset(state, 0, sizeof(*state));
-	state->window_x = init_x;
-	state->window_y = init_y;
-	state->window_width = init_w;
-	state->window_height = init_h;
-	oglinit(state);
+        state->window_x = init_x;
+        state->window_y = init_y;
+        state->window_width = init_w;
+        state->window_height = init_h;
+	oglinit();
 	*w = state->window_width;
 	*h = state->window_height;
 }
@@ -65,13 +61,13 @@ void egl_finish() {
 	eglTerminate(state->display);
 }
 
-void swap_buffers() {
+void egl_swap_buffers() {
   eglSwapBuffers(state->display, state->surface);
 }
 
 // oglinit sets the display, OpenVGL context and screen information
 // state holds the display information
-void oglinit(STATE_T * state) {
+void oglinit() {
 	int32_t success = 0;
 	EGLBoolean result;
 	EGLint num_config;
