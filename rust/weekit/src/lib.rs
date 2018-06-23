@@ -3,6 +3,8 @@
 #[macro_use]
 extern crate lazy_static;
 
+extern crate libc;
+
 pub mod draw;
 pub mod event;
 pub mod font;
@@ -12,6 +14,13 @@ mod input;
 mod openvg;
 
 use std::sync::{Arc, Mutex};
+
+use libc::timeval;
+use std::fs::File;
+use std::io::Read;
+use std::mem;
+use std::slice;
+use std::thread;
 
 #[cfg(target_os = "macos")]
 fn platform() -> String {
@@ -41,7 +50,11 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
 	println!("Running on {}", platform());
         APPLICATION = Some(Arc::new(Mutex::new(application)));
         INPUT_LISTENER = Some(input::Listener::new());
-        return WKMain(size_handler, draw_handler, input_handler, tick_handler);
+	if cfg!(target_os = "macos") {
+            return WKMain(size_handler, draw_handler, input_handler, tick_handler);
+	} else {
+            return WKMain(size_handler, draw_handler, input_handler, tick_handler);
+	}
     }
 }
 
@@ -105,3 +118,41 @@ extern "C" fn input_handler(t: u16, c: u16, v: i32) -> () {
         }
     }
 }
+
+#[repr(C, packed)]
+struct InputEvent {
+    time: timeval,
+    kind: u16,
+    code: u16,
+    value: i32,
+}
+
+fn listen() {
+    handle_inputs("/dev/input/touchscreen");
+    handle_inputs("/dev/input/keyboard");
+}
+
+fn handle_inputs(filename: &'static str) {
+    thread::spawn(move || {
+        let mut f = File::open(filename).expect(&("unable to open ".to_owned() + filename));
+
+        // https://stackoverflow.com/questions/25410028/how-to-read-a-struct-from-a-file-in-rust
+        let mut input_event: InputEvent = unsafe { mem::zeroed() };
+        let input_event_size = mem::size_of::<InputEvent>();
+        loop {
+            unsafe {
+                let input_event_slice = slice::from_raw_parts_mut(
+                    &mut input_event as *mut _ as *mut u8,
+                    input_event_size,
+                );
+                f.read_exact(input_event_slice).unwrap();
+                println!(
+                    "{} {} {}",
+                    input_event.kind, input_event.code, input_event.value
+                );
+		input_handler(input_event.kind, input_event.code, input_event.value);
+            }
+        }
+    });
+}
+  

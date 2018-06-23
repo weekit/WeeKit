@@ -81,6 +81,21 @@ WKTickHandler wkTickHandler;
 int start_input();
 void handle_input();
 
+void swap_buffers() {
+  eglSwapBuffers(state->display, state->surface);
+}
+
+int w, h;
+
+void WKInit() {
+  egl_init(&w, &h);
+  wkSizeHandler(w, h);
+}
+
+void WKFinish() {
+  egl_finish();
+}
+
 int WKMain(WKSizeHandler sizeHandler,
            WKDrawHandler drawHandler, 
            WKEventHandler eventHandler,
@@ -90,20 +105,18 @@ int WKMain(WKSizeHandler sizeHandler,
   wkEventHandler = eventHandler;
   wkTickHandler = tickHandler;
 
-  int w, h;
-  egl_init(&w, &h);
-  wkSizeHandler(w, h);
+  WKInit();
 
   start_input();
 
   unsigned char running = 0x01;
   while(running) {
   	wkDrawHandler(w, h);
-  	eglSwapBuffers(state->display, state->surface);
+	swap_buffers();
 	handle_input();
   	wkTickHandler();
   }
-  egl_finish();
+  WKFinish();
   return 0;
 }
 
