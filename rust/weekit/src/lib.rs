@@ -13,6 +13,16 @@ mod openvg;
 
 use std::sync::{Arc, Mutex};
 
+#[cfg(target_os = "macos")]
+fn platform() -> String {
+   "macos".to_string()
+}
+
+#[cfg(target_os = "linux")]
+fn platform() -> String {
+   "linux".to_string()
+}
+
 /// Specifies required application capabilities.
 pub trait Application {
     /// Resizes the current application screen.
@@ -28,6 +38,7 @@ pub trait Application {
 /// Starts the application and runs the main event loop.
 pub fn main<T: Application + 'static>(application: T) -> i64 {
     unsafe {
+	println!("Running on {}", platform());
         APPLICATION = Some(Arc::new(Mutex::new(application)));
         INPUT_LISTENER = Some(input::Listener::new());
         return WKMain(size_handler, draw_handler, input_handler, tick_handler);
