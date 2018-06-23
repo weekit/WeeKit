@@ -82,8 +82,8 @@ void getInputDetails(int fd) {
 	}
 }
 
-typedef void (*WKEventHandler)(short, short, int);
-extern WKEventHandler wkEventHandler;
+//typedef void (*WKEventHandler)(short, short, int);
+//extern WKEventHandler wkEventHandler;
 
 unsigned char has_inputs(int fd) {
 	fd_set rfds;
@@ -118,7 +118,7 @@ void handle_inputs(int fd) {
 		unsigned short t = ev[i].type;
 		unsigned short c = ev[i].code;
 		int v = ev[i].value;
-		wkEventHandler(t, c, v);
+		//wkEventHandler(t, c, v);
 	}
 }
 

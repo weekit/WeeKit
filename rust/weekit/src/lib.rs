@@ -14,13 +14,13 @@ mod input;
 mod openvg;
 
 use std::sync::{Arc, Mutex};
+use std::{thread, time};
 
 use libc::timeval;
 use std::fs::File;
 use std::io::Read;
 use std::mem;
 use std::slice;
-use std::thread;
 
 #[cfg(target_os = "macos")]
 fn platform() -> String {
@@ -53,7 +53,20 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
 	if cfg!(target_os = "macos") {
             return WKMain(size_handler, draw_handler, input_handler, tick_handler);
 	} else {
-            return WKMain(size_handler, draw_handler, input_handler, tick_handler);
+	    let mut w:u32 = 0;
+	    let mut h:u32 = 0;
+  	    egl_init(&mut w, &mut h);
+	    size_handler(w, h);
+	    let ten_millis = time::Duration::from_millis(10);
+	    listen();
+  	    loop  {
+        	draw_handler(w, h);
+        	swap_buffers();
+		thread::sleep(ten_millis);
+        	tick_handler();
+  	    }
+            egl_finish();
+	    0
 	}
     }
 }
@@ -65,6 +78,9 @@ extern "C" {
         e: extern "C" fn(u16, u16, i32) -> (),
         t: extern "C" fn() -> (),
     ) -> i64;
+    fn egl_init(w:&mut u32, h:&mut u32);
+    fn egl_finish();
+    fn swap_buffers();
 }
 
 static mut APPLICATION: Option<Arc<Mutex<Application>>> = None;

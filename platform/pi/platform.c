@@ -65,59 +65,8 @@ void egl_finish() {
 	eglTerminate(state->display);
 }
 
-
-// WeeKit handler functions
-typedef void (*WKSizeHandler)(int, int);
-typedef void (*WKDrawHandler)(int, int);
-typedef void (*WKEventHandler)(short, short, int);
-typedef void (*WKTickHandler)();
-
-// Handler pointers
-WKSizeHandler wkSizeHandler;
-WKDrawHandler wkDrawHandler;
-WKEventHandler wkEventHandler;
-WKTickHandler wkTickHandler;
-
-int start_input();
-void handle_input();
-
 void swap_buffers() {
   eglSwapBuffers(state->display, state->surface);
-}
-
-int w, h;
-
-void WKInit() {
-  egl_init(&w, &h);
-  wkSizeHandler(w, h);
-}
-
-void WKFinish() {
-  egl_finish();
-}
-
-int WKMain(WKSizeHandler sizeHandler,
-           WKDrawHandler drawHandler, 
-           WKEventHandler eventHandler,
-	   WKTickHandler tickHandler) {
-  wkSizeHandler = sizeHandler;
-  wkDrawHandler = drawHandler;
-  wkEventHandler = eventHandler;
-  wkTickHandler = tickHandler;
-
-  WKInit();
-
-  start_input();
-
-  unsigned char running = 0x01;
-  while(running) {
-  	wkDrawHandler(w, h);
-	swap_buffers();
-	handle_input();
-  	wkTickHandler();
-  }
-  WKFinish();
-  return 0;
 }
 
 // oglinit sets the display, OpenVGL context and screen information
