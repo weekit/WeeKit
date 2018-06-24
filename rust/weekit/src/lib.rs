@@ -60,9 +60,9 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
             let mut h: u32 = 0;
             egl_init(&mut w, &mut h);
             size_handler(w, h);
-    	    handle_inputs("/dev/input/touchscreen");
+            handle_inputs("/dev/input/touchscreen");
             handle_inputs("/dev/input/keyboard");
-	    start_timer();
+            start_timer();
 
             let delay = time::Duration::from_millis(20);
             loop {
@@ -175,9 +175,9 @@ fn handle_inputs(filename: &'static str) {
 fn start_timer() {
     thread::spawn(move || {
         let delay = time::Duration::from_millis(10);
-	loop {
-	    tick_handler();
-	    thread::sleep(delay);
-	}
+        loop {
+            tick_handler();
+            thread::sleep(delay);
+        }
     });
 }
