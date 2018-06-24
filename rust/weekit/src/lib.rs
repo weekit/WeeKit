@@ -9,6 +9,7 @@ pub mod draw;
 pub mod event;
 pub mod font;
 pub mod key;
+pub mod egl;
 
 mod input;
 mod openvg;
@@ -55,10 +56,9 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
         if cfg!(target_os = "macos") {
             return WKMain(size_handler, draw_handler, input_handler, tick_handler);
         } else {
-            bcm_host_init();
             let mut w: u32 = 0;
             let mut h: u32 = 0;
-            egl_init(&mut w, &mut h);
+            egl::init(&mut w, &mut h);
             size_handler(w, h);
     	    handle_inputs("/dev/input/touchscreen");
             handle_inputs("/dev/input/keyboard");
@@ -67,10 +67,10 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
             let delay = time::Duration::from_millis(20);
             loop {
                 draw_handler(w, h);
-                egl_swap_buffers();
+                egl::swap_buffers();
                 thread::sleep(delay);
             }
-            egl_finish();
+            egl::finish();
             0
         }
     }
@@ -83,10 +83,6 @@ extern "C" {
         e: extern "C" fn(u16, u16, i32) -> (),
         t: extern "C" fn() -> (),
     ) -> i64;
-    fn bcm_host_init();
-    fn egl_init(w: &mut u32, h: &mut u32);
-    fn egl_finish();
-    fn egl_swap_buffers();
     fn get_input_details(f: c_int);
 }
 
