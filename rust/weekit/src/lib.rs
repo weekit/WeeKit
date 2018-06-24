@@ -48,8 +48,8 @@ pub trait Application {
 
 /// Starts the application and runs the main event loop.
 pub fn main<T: Application + 'static>(application: T) -> i64 {
+    println!("Running on {}", platform());
     unsafe {
-        println!("Running on {}", platform());
         APPLICATION = Some(Arc::new(Mutex::new(application)));
         INPUT_LISTENER = Some(input::Listener::new());
         if cfg!(target_os = "macos") {
@@ -60,13 +60,15 @@ pub fn main<T: Application + 'static>(application: T) -> i64 {
             let mut h: u32 = 0;
             egl_init(&mut w, &mut h);
             size_handler(w, h);
-            let ten_millis = time::Duration::from_millis(10);
-            listen();
+    	    handle_inputs("/dev/input/touchscreen");
+            handle_inputs("/dev/input/keyboard");
+	    start_timer();
+
+            let delay = time::Duration::from_millis(20);
             loop {
                 draw_handler(w, h);
                 egl_swap_buffers();
-                thread::sleep(ten_millis);
-                tick_handler();
+                thread::sleep(delay);
             }
             egl_finish();
             0
@@ -148,11 +150,6 @@ struct InputEvent {
     value: i32,
 }
 
-fn listen() {
-    handle_inputs("/dev/input/touchscreen");
-    handle_inputs("/dev/input/keyboard");
-}
-
 fn handle_inputs(filename: &'static str) {
     thread::spawn(move || {
         let mut f = File::open(filename).expect(&("unable to open ".to_owned() + filename));
@@ -172,5 +169,15 @@ fn handle_inputs(filename: &'static str) {
                 input_handler(input_event.kind, input_event.code, input_event.value);
             }
         }
+    });
+}
+
+fn start_timer() {
+    thread::spawn(move || {
+        let delay = time::Duration::from_millis(10);
+	loop {
+	    tick_handler();
+	    thread::sleep(delay);
+	}
     });
 }
