@@ -11,8 +11,8 @@ pub mod font;
 pub mod key;
 pub mod egl;
 
-mod input;
-mod openvg;
+pub mod input;
+pub mod openvg;
 
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
