@@ -2,11 +2,11 @@ all:	app
 
 libs:	lib/libplatform.so
 
-lib/libplatform.so:	platform/pi/platform.c platform/pi/inputs.c
+lib/libplatform.so:	platform/pi/egl.c platform/pi/input.c
 	mkdir -p lib
 	clang \
-		platform/pi/platform.c \
-		platform/pi/inputs.c \
+		platform/pi/egl.c \
+		platform/pi/input.c \
 		-g \
 		-I /opt/vc/include \
 		-I /usr/local/include \

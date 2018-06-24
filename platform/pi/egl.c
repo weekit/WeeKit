@@ -12,21 +12,11 @@
 #include "VG/vgu.h"
 #include "EGL/egl.h"
 
-typedef struct {
-	// screen dimensions
-	uint32_t width;
-	uint32_t height;
+static EGLDisplay display;
+static EGLContext context;
+static EGLSurface surface;
 
-	// dispman window 
-	EGL_DISPMANX_WINDOW_T window;
-
-	// EGL data
-	EGLDisplay display;
-	EGLSurface surface;
-	EGLContext context;
-} STATE_T;
-
-static STATE_T _state, *state = &_state;	// global graphics state
+static EGL_DISPMANX_WINDOW_T window;
 
 static VC_DISPMANX_ALPHA_T alpha = {
 	DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS,
@@ -43,14 +33,13 @@ static const EGLint attribute_list[] = {
 };
  
 void egl_init(uint32_t *w, uint32_t *h) {
-	memset(state, 0, sizeof(STATE_T));
 
 	// get an EGL display connection
-	state->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	assert(state->display != EGL_NO_DISPLAY);
+	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	assert(display != EGL_NO_DISPLAY);
 
 	// initialize the EGL display connection
-	EGLBoolean result = eglInitialize(state->display, NULL, NULL);
+	EGLBoolean result = eglInitialize(display, NULL, NULL);
 	assert(EGL_FALSE != result);
 
 	// bind OpenVG API
@@ -59,21 +48,20 @@ void egl_init(uint32_t *w, uint32_t *h) {
 	// get an appropriate EGL frame buffer configuration
 	EGLConfig config;
 	EGLint num_config;
-	result = eglChooseConfig(state->display, attribute_list, &config, 1, &num_config);
+	result = eglChooseConfig(display, attribute_list, &config, 1, &num_config);
 	assert(EGL_FALSE != result);
 
 	// create an EGL rendering context
-	state->context = eglCreateContext(state->display, config, EGL_NO_CONTEXT, NULL);
-	assert(state->context != EGL_NO_CONTEXT);
+	context = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL);
+	assert(context != EGL_NO_CONTEXT);
 
-	// create an EGL window surface
 	DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0 /* LCD */ );
 
 	// get the display size
 	DISPMANX_MODEINFO_T mode_info;
 	int32_t success = vc_dispmanx_display_get_info(dispman_display, &mode_info);
-	state->width = mode_info.width;
-	state->height = mode_info.height;
+	*w = mode_info.width;
+	*h = mode_info.height;
 
 	DISPMANX_UPDATE_HANDLE_T dispman_update = vc_dispmanx_update_start(0);
 	VC_RECT_T dst_rect;
@@ -90,35 +78,32 @@ void egl_init(uint32_t *w, uint32_t *h) {
                 0 /*clamp */ ,
 		0 /*transform */ );
 
-	state->window.element = dispman_element;
-	state->window.width = state->width;
-	state->window.height = state->height;
+	window.element = dispman_element;
+	window.width = *w;
+	window.height = *h;
 	vc_dispmanx_update_submit_sync(dispman_update);
 
-	state->surface = eglCreateWindowSurface(state->display, config, &(state->window), NULL);
-	assert(state->surface != EGL_NO_SURFACE);
+	// create an EGL window surface
+	surface = eglCreateWindowSurface(display, config, &window, NULL);
+	assert(surface != EGL_NO_SURFACE);
 
 	// preserve the buffers on swap
-	result = eglSurfaceAttrib(state->display, state->surface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
+	result = eglSurfaceAttrib(display, surface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
 	assert(EGL_FALSE != result);
 
 	// connect the context to the surface
-	result = eglMakeCurrent(state->display, state->surface, state->surface, state->context);
+	result = eglMakeCurrent(display, surface, surface, context);
 	assert(EGL_FALSE != result);
-
-	// return the screen size
-	*w = state->width;
-	*h = state->height;
 }
 
 void egl_finish() {
-	eglSwapBuffers(state->display, state->surface);
-	eglMakeCurrent(state->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-	eglDestroySurface(state->display, state->surface);
-	eglDestroyContext(state->display, state->context);
-	eglTerminate(state->display);
+	eglSwapBuffers(display, surface);
+	eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+	eglDestroySurface(display, surface);
+	eglDestroyContext(display, context);
+	eglTerminate(display);
 }
 
 void egl_swap_buffers() {
-	eglSwapBuffers(state->display, state->surface);
+	eglSwapBuffers(display, surface);
 }
