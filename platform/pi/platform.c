@@ -30,45 +30,18 @@ typedef struct {
 } STATE_T;
 
 static STATE_T _state, *state = &_state;	// global graphics state
-static const int MAXFONTPATH = 500;
 static int init_x = 0;         // Initial window position and size
 static int init_y = 0;
 static unsigned int init_w = 0;
 static unsigned int init_h = 0;
  
-
-void oglinit();
-
-// init sets the system to its initial state
 void egl_init(int *w, int *h) {
-	//bcm_host_init();
 	memset(state, 0, sizeof(*state));
         state->window_x = init_x;
         state->window_y = init_y;
         state->window_width = init_w;
         state->window_height = init_h;
-	oglinit();
-	*w = state->window_width;
-	*h = state->window_height;
-}
 
-// finish cleans up
-void egl_finish() {
-	eglSwapBuffers(state->display, state->surface);
-	eglMakeCurrent(state->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-	eglDestroySurface(state->display, state->surface);
-	eglDestroyContext(state->display, state->context);
-	eglTerminate(state->display);
-}
-
-void egl_swap_buffers() {
-  eglSwapBuffers(state->display, state->surface);
-}
-
-// oglinit sets the display, OpenVGL context and screen information
-// state holds the display information
-void oglinit() {
-	int32_t success = 0;
 	EGLBoolean result;
 	EGLint num_config;
 
@@ -115,7 +88,7 @@ void oglinit() {
 	assert(state->context != EGL_NO_CONTEXT);
 
 	// create an EGL window surface
-	success = graphics_get_display_size(0 /* LCD */ , &state->screen_width,
+	int32_t success = graphics_get_display_size(0 /* LCD */ , &state->screen_width,
 					    &state->screen_height);
 	assert(success >= 0);
 
@@ -147,5 +120,19 @@ void oglinit() {
 	// connect the context to the surface
 	result = eglMakeCurrent(state->display, state->surface, state->surface, state->context);
 	assert(EGL_FALSE != result);
+
+	*w = state->window_width;
+	*h = state->window_height;
 }
 
+void egl_finish() {
+	eglSwapBuffers(state->display, state->surface);
+	eglMakeCurrent(state->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+	eglDestroySurface(state->display, state->surface);
+	eglDestroyContext(state->display, state->context);
+	eglTerminate(state->display);
+}
+
+void egl_swap_buffers() {
+	eglSwapBuffers(state->display, state->surface);
+}

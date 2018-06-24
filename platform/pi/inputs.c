@@ -34,8 +34,6 @@ void get_input_details(int fd) {
         ioctl(fd, EVIOCGBIT(0, EV_MAX), bit[0]);
         printf("Supported events:\n");
 
-	int xmin, xmax, ymin, ymax;
-
         int i,j,k;
         for (i = 0; i < EV_MAX; i++) {
                 if (test_bit(i, bit[0])) {
@@ -50,14 +48,6 @@ void get_input_details(int fd) {
                                                 for (k = 0; k < 5; k++) {
                                                         if ((k < 3) || abs[k]){
                                                                 printf("     %s %d\n", absval[k], abs[k]);
-                                                                if (j == 0){
-                                                                        if (k == 1) xmin =  abs[k];
-                                                                        if (k == 2) xmax =  abs[k];
-                                                                }
-                                                                if (j == 1){
-                                                                        if (k == 1) ymin =  abs[k];
-                                                                        if (k == 2) ymax =  abs[k];
-                                                                }
                                                         }
                                                 }
 
