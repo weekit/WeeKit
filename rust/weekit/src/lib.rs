@@ -20,18 +20,18 @@ use libc::timeval;
 use std::fs::File;
 use std::io::Read;
 use std::mem;
-use std::slice;
 use std::os::raw::c_int;
 use std::os::unix::io::AsRawFd;
+use std::slice;
 
 #[cfg(target_os = "macos")]
 fn platform() -> String {
-   "macos".to_string()
+    "macos".to_string()
 }
 
 #[cfg(target_os = "linux")]
 fn platform() -> String {
-   "linux".to_string()
+    "linux".to_string()
 }
 
 /// Specifies required application capabilities.
@@ -49,28 +49,28 @@ pub trait Application {
 /// Starts the application and runs the main event loop.
 pub fn main<T: Application + 'static>(application: T) -> i64 {
     unsafe {
-	println!("Running on {}", platform());
+        println!("Running on {}", platform());
         APPLICATION = Some(Arc::new(Mutex::new(application)));
         INPUT_LISTENER = Some(input::Listener::new());
-	if cfg!(target_os = "macos") {
+        if cfg!(target_os = "macos") {
             return WKMain(size_handler, draw_handler, input_handler, tick_handler);
-	} else {
-	    bcm_host_init();
-	    let mut w:u32 = 0;
-	    let mut h:u32 = 0;
-  	    egl_init(&mut w, &mut h);
-	    size_handler(w, h);
-	    let ten_millis = time::Duration::from_millis(10);
-	    listen();
-  	    loop  {
-        	draw_handler(w, h);
-        	egl_swap_buffers();
-		thread::sleep(ten_millis);
-        	tick_handler();
-  	    }
+        } else {
+            bcm_host_init();
+            let mut w: u32 = 0;
+            let mut h: u32 = 0;
+            egl_init(&mut w, &mut h);
+            size_handler(w, h);
+            let ten_millis = time::Duration::from_millis(10);
+            listen();
+            loop {
+                draw_handler(w, h);
+                egl_swap_buffers();
+                thread::sleep(ten_millis);
+                tick_handler();
+            }
             egl_finish();
-	    0
-	}
+            0
+        }
     }
 }
 
@@ -82,10 +82,10 @@ extern "C" {
         t: extern "C" fn() -> (),
     ) -> i64;
     fn bcm_host_init();
-    fn egl_init(w:&mut u32, h:&mut u32);
+    fn egl_init(w: &mut u32, h: &mut u32);
     fn egl_finish();
     fn egl_swap_buffers();
-    fn get_input_details(f : c_int);
+    fn get_input_details(f: c_int);
 }
 
 static mut APPLICATION: Option<Arc<Mutex<Application>>> = None;
@@ -156,9 +156,9 @@ fn listen() {
 fn handle_inputs(filename: &'static str) {
     thread::spawn(move || {
         let mut f = File::open(filename).expect(&("unable to open ".to_owned() + filename));
-	unsafe {
+        unsafe {
             get_input_details(f.as_raw_fd());
-	}
+        }
         // https://stackoverflow.com/questions/25410028/how-to-read-a-struct-from-a-file-in-rust
         let mut input_event: InputEvent = unsafe { mem::zeroed() };
         let input_event_size = mem::size_of::<InputEvent>();
@@ -169,9 +169,8 @@ fn handle_inputs(filename: &'static str) {
                     input_event_size,
                 );
                 f.read_exact(input_event_slice).unwrap();
-		input_handler(input_event.kind, input_event.code, input_event.value);
+                input_handler(input_event.kind, input_event.code, input_event.value);
             }
         }
     });
 }
-  
