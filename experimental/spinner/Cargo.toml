@@ -1,0 +1,6 @@
+[package]
+name = "spinner"
+version = "0.1.0"
+authors = ["Tim Burks <timburks@google.com>"]
+
+[dependencies]
