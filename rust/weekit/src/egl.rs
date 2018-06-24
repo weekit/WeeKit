@@ -1,6 +1,3 @@
-
-
-
 extern "C" {
     fn bcm_host_init();
     fn egl_init(w: &mut u32, h: &mut u32);
@@ -17,7 +14,7 @@ pub fn init(w: &mut u32, h: &mut u32) {
 
 pub fn swap_buffers() {
     unsafe {
-	egl_swap_buffers();
+        egl_swap_buffers();
     }
 }
 

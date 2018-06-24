@@ -6,10 +6,10 @@ extern crate lazy_static;
 extern crate libc;
 
 pub mod draw;
+pub mod egl;
 pub mod event;
 pub mod font;
 pub mod key;
-pub mod egl;
 
 pub mod input;
 pub mod openvg;

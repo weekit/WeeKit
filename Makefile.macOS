@@ -1,6 +1,6 @@
 SDK=./third-party/amanithvg-sdk
 
-all:	rocks hello life colors
+all:	rocks hello life colors image
 
 libs:	lib/libAmanithVG.4.dylib lib/libplatform.dylib
 
@@ -8,11 +8,11 @@ lib/libAmanithVG.4.dylib: ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dyl
 	mkdir -p lib
 	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib lib
 
-lib/libplatform.dylib: platform/common/shapes.c platform/macOS/platform.m
+lib/libplatform.dylib: platform/common/image.c platform/macOS/platform.m
 	mkdir -p lib
 	# Build libplatform.
 	clang \
-		platform/common/shapes.c \
+		platform/common/image.c \
 		platform/macOS/platform.m \
 		-I platform/macOS \
 		-g \
@@ -45,6 +45,10 @@ life: libs
 
 colors: libs
 	tools/build.macOS colors
+
+image: libs
+	tools/build.macOS image
+
 clean:
 	cd rust/weekit; cargo clean
 	cd rust/svg; cargo clean

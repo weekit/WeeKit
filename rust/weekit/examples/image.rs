@@ -1,12 +1,12 @@
 extern crate weekit;
 
-use weekit::*;
-use weekit::openvg::VGfloat;
-use std::os::raw::c_char;
 use std::ffi::CString;
+use std::os::raw::c_char;
+use weekit::openvg::VGfloat;
+use weekit::*;
 
 extern "C" {
-  fn Image(x : VGfloat, y: VGfloat, w: i32, h: i32, filename: *const c_char) -> ();
+    fn Image(x: VGfloat, y: VGfloat, w: i32, h: i32, filename: *const c_char) -> ();
 }
 
 struct Demo<'a> {
@@ -34,9 +34,15 @@ impl<'a> Application for Demo<'a> {
         let canvas = draw::Canvas::new(width, height);
         canvas.background(192, 0, 0);
 
-	unsafe {
-	    Image(0.0, 0.0, 800, 480, CString::new("/tmp/sample.jpg").unwrap().as_ptr());
-	}
+        unsafe {
+            Image(
+                0.0,
+                0.0,
+                800,
+                480,
+                CString::new("/tmp/sample.jpg").unwrap().as_ptr(),
+            );
+        }
 
         draw::fill(255, 255, 255, 1.0); // White text
         let title = "https://picsum.photos/800/400";
