@@ -11,7 +11,6 @@
 #include "VG/openvg.h"
 #include "VG/vgu.h"
 #include "EGL/egl.h"
-#include "bcm_host.h"
 
 typedef struct {
 	// screen dimensions
@@ -46,13 +45,6 @@ static const EGLint attribute_list[] = {
 void egl_init(uint32_t *w, uint32_t *h) {
 	memset(state, 0, sizeof(STATE_T));
 
-	// get the screen size
-	int32_t success = graphics_get_display_size(
-		0 /* LCD */ , 
-		&state->width,
-		&state->height);
-	assert(success >= 0);
-
 	// get an EGL display connection
 	state->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	assert(state->display != EGL_NO_DISPLAY);
@@ -76,6 +68,13 @@ void egl_init(uint32_t *w, uint32_t *h) {
 
 	// create an EGL window surface
 	DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0 /* LCD */ );
+
+	// get the display size
+	DISPMANX_MODEINFO_T mode_info;
+	int32_t success = vc_dispmanx_display_get_info(dispman_display, &mode_info);
+	state->width = mode_info.width;
+	state->height = mode_info.height;
+
 	DISPMANX_UPDATE_HANDLE_T dispman_update = vc_dispmanx_update_start(0);
 	VC_RECT_T dst_rect;
 	VC_RECT_T src_rect;

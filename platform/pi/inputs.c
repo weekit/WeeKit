@@ -29,6 +29,8 @@ void get_input_details(int fd) {
         ioctl(fd, EVIOCGNAME(sizeof(name)), name);
         printf("Input device name: \"%s\"\n", name);
 
+	return;
+
 	// get supported events
         memset(bit, 0, sizeof(bit));
         ioctl(fd, EVIOCGBIT(0, EV_MAX), bit[0]);
