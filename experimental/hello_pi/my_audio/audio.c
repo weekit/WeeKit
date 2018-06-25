@@ -27,13 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Audio output demo using OpenMAX IL though the ilcient helper library
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <assert.h>
-#include <unistd.h>
-#include <semaphore.h>
-#include <math.h>
 
 #include "bcm_host.h"
 #include "ilclient.h"
@@ -386,7 +380,7 @@ static const char *audio_dest_name[] = { "local", "hdmi" };
 
 
 void
-audioplay (AUDIOPLAY_CONTEXT_T * context, AudioplayCallback filler)
+audio_play (AUDIOPLAY_CONTEXT_T * context, AudioplayCallback filler)
 {
   context->channels = OUT_CHANNELS (context->channels);
   AUDIOPLAY_STATE_T *st;
@@ -440,70 +434,3 @@ audioplay (AUDIOPLAY_CONTEXT_T * context, AudioplayCallback filler)
   audioplay_delete (st);
 }
 
-
-#define N_WAVE          1024	/* dimension of Sinewave[] */
-extern short Sinewave[];
-
-uint8_t
-buffer_fill (uint8_t * buf, AUDIOPLAY_CONTEXT_T * context)
-{
-  context->fills++;
-
-  double TONE_FREQUENCY = 261.6 * 2;	// Hz
-  double TONE_PERIOD = 1.0 / TONE_FREQUENCY;	// fraction of a second covered by one tone period.
-  double TONE_SAMPLES = TONE_PERIOD * context->samplerate;	// number of samples in one tone period.
-  double STEP_SIZE = N_WAVE / TONE_SAMPLES;	// use to step through a periodic function to get the desired tone.
-
-  int16_t *p = (int16_t *) buf;
-
-  // fill the buffer
-  for (int i = 0; i < context->buffer_size_samples; i++)
-    {
-      int16_t val = Sinewave[(int) context->phase];
-
-//      int16_t val = (int16_t) 32767.0 * sin(context->phase / N_WAVE * 2.0 * 3.14159);
-      context->phase += STEP_SIZE;
-      while (context->phase >= N_WAVE)
-	{
-	  context->phase -= N_WAVE;
-	}
-
-      // fill the channels (mono)
-      int j;
-      for (j = 0; j < context->channels; j++)
-	{
-	  if (context->bitdepth == 32)
-	    *p++ = 0;
-	  *p++ = val;
-	}
-    }
-
-  int TIME = 3;
-  return context->fills <
-    ((context->samplerate * TIME) / context->buffer_size_samples);
-}
-
-int
-main (int argc, char **argv)
-{
-  bcm_host_init ();
-
-  AUDIOPLAY_CONTEXT_T context;
-  init_playback_context (&context);
-  context.buffer_size_samples = 1024;
-
-  if (argc > 1)
-    context.audio_dest = atoi (argv[1]);
-  if (argc > 2)
-    context.channels = atoi (argv[2]);
-  if (argc > 3)
-    context.samplerate = atoi (argv[3]);
-
-  if (context.audio_dest < 2)
-    {
-      printf ("Outputting audio to %s\n",
-	      audio_dest_name[context.audio_dest]);
-      audioplay (&context, buffer_fill);
-    }
-  return 0;
-}
