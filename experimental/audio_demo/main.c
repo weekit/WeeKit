@@ -32,8 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "audio.h"
 
-static const char *audio_dest_name[] = { "local", "hdmi" };
-
 #define N_WAVE          1024	/* dimension of Sinewave[] */
 extern short Sinewave[];
 
@@ -54,7 +52,10 @@ buffer_fill (uint8_t * buf, AUDIOPLAY_CONTEXT_T * context)
     {
 //      int16_t val = Sinewave[(int) context->phase];
 
-      int16_t val = (int16_t) 32767.0 * sin(context->phase / N_WAVE * 2.0 * 3.14159);
+      double M = 32767.0 / 2.0;
+
+      int16_t val = (int16_t) M * sin(context->phase / N_WAVE * 2.0 * 3.14159);
+
       context->phase += STEP_SIZE;
       while (context->phase >= N_WAVE)
 	{
@@ -71,7 +72,7 @@ buffer_fill (uint8_t * buf, AUDIOPLAY_CONTEXT_T * context)
 	}
     }
 
-  int TIME = 3;
+  int TIME = 10;
   return context->fills <
     ((context->samplerate * TIME) / context->buffer_size_samples);
 }
@@ -83,7 +84,6 @@ main (int argc, char **argv)
 
   AUDIOPLAY_CONTEXT_T context;
   init_playback_context (&context);
-  context.buffer_size_samples = 1024;
 
   if (argc > 1)
     context.audio_dest = atoi (argv[1]);
@@ -94,8 +94,6 @@ main (int argc, char **argv)
 
   if (context.audio_dest < 2)
     {
-      printf ("Outputting audio to %s\n",
-	      audio_dest_name[context.audio_dest]);
       audio_play (&context, buffer_fill);
     }
   return 0;

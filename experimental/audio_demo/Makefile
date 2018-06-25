@@ -1,6 +1,6 @@
 OBJS=audio.o sinewave.o main.o ilclient.o ilcore.o
-BIN=my_audio.bin
+BIN=audio_demo.bin
 
 
-include ../Makefile.include
+include Makefile.include
 
