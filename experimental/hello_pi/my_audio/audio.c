@@ -45,6 +45,36 @@ extern short Sinewave[];
 
 typedef int int32_t;
 
+///////
+
+typedef struct {
+  int audio_dest;		// 0=headphones, 1=hdmi
+  int samplerate;		// audio sample rate in Hz
+  int channels;		// numnber of audio channels
+  int bitdepth;		// number of bits per sample
+  float phase;
+  int fills;			// number of times we've filled the buffer
+} PLAYBACK_CONTEXT_T;
+
+void init_playback_context(PLAYBACK_CONTEXT_T *context) {
+  context->audio_dest = 0;		// 0=headphones, 1=hdmi
+  context->samplerate = 48000;		// audio sample rate in Hz
+  context->channels = 2;		// numnber of audio channels
+  context->bitdepth = 16;		// number of bits per sample
+  context->phase = 0.0;
+  context->fills = 0;			// number of times we've filled the buffer
+}
+
+int audio_dest = 0;		// 0=headphones, 1=hdmi
+int samplerate = 48000;		// audio sample rate in Hz
+int channels = 2;		// numnber of audio channels
+int bitdepth = 16;		// number of bits per sample
+float phase = 0.0;
+int fills = 0;			// number of times we've filled the buffer
+
+//////
+
+
 typedef struct
 {
   sem_t sema;
@@ -358,7 +388,7 @@ audioplay_get_latency (AUDIOPLAY_STATE_T * st)
 
 static const char *audio_dest_name[] = { "local", "hdmi" };
 
-typedef uint8_t (*BufferFiller)(uint8_t *buf, void *context);
+typedef uint8_t (*BufferFiller)(uint8_t *buf, PLAYBACK_CONTEXT_T *context);
 
 void
 play_audio (int samplerate, int bitdepth, int nchannels, int dest, BufferFiller filler, void *context)
@@ -413,16 +443,8 @@ play_audio (int samplerate, int bitdepth, int nchannels, int dest, BufferFiller 
   audioplay_delete (st);
 }
 
-
-int audio_dest = 0;		// 0=headphones, 1=hdmi
-int samplerate = 48000;		// audio sample rate in Hz
-int channels = 2;		// numnber of audio channels
-int bitdepth = 16;		// number of bits per sample
-float phase = 0.0;
-int fills = 0;			// number of times we've filled the buffer
-
 uint8_t
-buffer_fill (uint8_t * buf, void *context)
+buffer_fill (uint8_t * buf, PLAYBACK_CONTEXT_T *context)
 {
   fills++;
 
@@ -464,6 +486,9 @@ main (int argc, char **argv)
 {
   bcm_host_init ();
 
+  PLAYBACK_CONTEXT_T context;
+  init_playback_context(&context);
+
   if (argc > 1)
     audio_dest = atoi (argv[1]);
   if (argc > 2)
@@ -473,6 +498,6 @@ main (int argc, char **argv)
 
   printf ("Outputting audio to %s\n", audio_dest == 0 ? "analogue" : "hdmi");
 
-  play_audio (samplerate, bitdepth, channels, audio_dest, buffer_fill, NULL);
+  play_audio (samplerate, bitdepth, channels, audio_dest, buffer_fill, &context);
   return 0;
 }
