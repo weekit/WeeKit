@@ -1,6 +1,5 @@
-OBJS=audio.o sinewave.o main.o
+OBJS=audio.o sinewave.o main.o ilclient.o ilcore.o
 BIN=my_audio.bin
-LDFLAGS+=-lilclient
 
 
 include ../Makefile.include
