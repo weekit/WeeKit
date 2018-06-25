@@ -37,395 +37,442 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "bcm_host.h"
 #include "ilclient.h"
 
-#define N_WAVE          1024    /* dimension of Sinewave[] */
+#define N_WAVE          1024	/* dimension of Sinewave[] */
 #define OUT_CHANNELS(num_channels) ((num_channels) > 4 ? 8: (num_channels) > 2 ? 4: (num_channels))
 extern short Sinewave[];
-
-#ifndef countof
-   #define countof(arr) (sizeof(arr) / sizeof(arr[0]))
-#endif
 
 #define BUFFER_SIZE_SAMPLES 1024
 
 typedef int int32_t;
 
-typedef struct {
-   sem_t sema;
-   ILCLIENT_T *client;
-   COMPONENT_T *audio_render;
-   COMPONENT_T *list[2];
-   OMX_BUFFERHEADERTYPE *user_buffer_list; // buffers owned by the client
-   uint32_t num_buffers;
-   uint32_t bytes_per_sample;
+typedef struct
+{
+  sem_t sema;
+  ILCLIENT_T *client;
+  COMPONENT_T *audio_render;
+  COMPONENT_T *list[2];
+  OMX_BUFFERHEADERTYPE *user_buffer_list;	// buffers owned by the client
+  uint32_t num_buffers;
+  uint32_t bytes_per_sample;
 } AUDIOPLAY_STATE_T;
 
-static void input_buffer_callback(void *data, COMPONENT_T *comp)
+static void
+input_buffer_callback (void *data, COMPONENT_T * comp)
 {
-   // do nothing - could add a callback to the user
-   // to indicate more buffers may be available.
+  // do nothing - could add a callback to the user
+  // to indicate more buffers may be available.
 }
 
-int32_t audioplay_create(AUDIOPLAY_STATE_T **handle,
-                         uint32_t sample_rate,
-                         uint32_t num_channels,
-                         uint32_t bit_depth,
-                         uint32_t num_buffers,
-                         uint32_t buffer_size)
+int32_t
+audioplay_create (AUDIOPLAY_STATE_T ** handle,
+		  uint32_t sample_rate,
+		  uint32_t num_channels,
+		  uint32_t bit_depth,
+		  uint32_t num_buffers, uint32_t buffer_size)
 {
-   uint32_t bytes_per_sample = (bit_depth * OUT_CHANNELS(num_channels)) >> 3;
-   int32_t ret = -1;
+  uint32_t bytes_per_sample = (bit_depth * OUT_CHANNELS (num_channels)) >> 3;
+  int32_t ret = -1;
 
-   *handle = NULL;
+  *handle = NULL;
 
-   // basic sanity check on arguments
-   if(sample_rate >= 8000 && sample_rate <= 192000 &&
+  // basic sanity check on arguments
+  if (sample_rate >= 8000 && sample_rate <= 192000 &&
       (num_channels >= 1 && num_channels <= 8) &&
       (bit_depth == 16 || bit_depth == 32) &&
-      num_buffers > 0 &&
-      buffer_size >= bytes_per_sample)
-   {
+      num_buffers > 0 && buffer_size >= bytes_per_sample)
+    {
       // buffer lengths must be 16 byte aligned for VCHI
       int size = (buffer_size + 15) & ~15;
       AUDIOPLAY_STATE_T *st;
 
       // buffer offsets must also be 16 byte aligned for VCHI
-      st = calloc(1, sizeof(AUDIOPLAY_STATE_T));
+      st = calloc (1, sizeof (AUDIOPLAY_STATE_T));
 
-      if(st)
-      {
-         OMX_ERRORTYPE error;
-         OMX_PARAM_PORTDEFINITIONTYPE param;
-         OMX_AUDIO_PARAM_PCMMODETYPE pcm;
-         int32_t s;
+      if (st)
+	{
+	  OMX_ERRORTYPE error;
+	  OMX_PARAM_PORTDEFINITIONTYPE param;
+	  OMX_AUDIO_PARAM_PCMMODETYPE pcm;
+	  int32_t s;
 
-         ret = 0;
-         *handle = st;
+	  ret = 0;
+	  *handle = st;
 
-         // create and start up everything
-         s = sem_init(&st->sema, 0, 1);
-         assert(s == 0);
+	  // create and start up everything
+	  s = sem_init (&st->sema, 0, 1);
+	  assert (s == 0);
 
-         st->bytes_per_sample = bytes_per_sample;
-         st->num_buffers = num_buffers;
+	  st->bytes_per_sample = bytes_per_sample;
+	  st->num_buffers = num_buffers;
 
-         st->client = ilclient_init();
-         assert(st->client != NULL);
+	  st->client = ilclient_init ();
+	  assert (st->client != NULL);
 
-         ilclient_set_empty_buffer_done_callback(st->client, input_buffer_callback, st);
+	  ilclient_set_empty_buffer_done_callback (st->client,
+						   input_buffer_callback, st);
 
-         error = OMX_Init();
-         assert(error == OMX_ErrorNone);
+	  error = OMX_Init ();
+	  assert (error == OMX_ErrorNone);
 
-         ilclient_create_component(st->client, &st->audio_render, "audio_render", ILCLIENT_ENABLE_INPUT_BUFFERS | ILCLIENT_DISABLE_ALL_PORTS);
-         assert(st->audio_render != NULL);
+	  ilclient_create_component (st->client, &st->audio_render,
+				     "audio_render",
+				     ILCLIENT_ENABLE_INPUT_BUFFERS |
+				     ILCLIENT_DISABLE_ALL_PORTS);
+	  assert (st->audio_render != NULL);
 
-         st->list[0] = st->audio_render;
+	  st->list[0] = st->audio_render;
 
-         // set up the number/size of buffers
-         memset(&param, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
-         param.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
-         param.nVersion.nVersion = OMX_VERSION;
-         param.nPortIndex = 100;
+	  // set up the number/size of buffers
+	  memset (&param, 0, sizeof (OMX_PARAM_PORTDEFINITIONTYPE));
+	  param.nSize = sizeof (OMX_PARAM_PORTDEFINITIONTYPE);
+	  param.nVersion.nVersion = OMX_VERSION;
+	  param.nPortIndex = 100;
 
-         error = OMX_GetParameter(ILC_GET_HANDLE(st->audio_render), OMX_IndexParamPortDefinition, &param);
-         assert(error == OMX_ErrorNone);
+	  error =
+	    OMX_GetParameter (ILC_GET_HANDLE (st->audio_render),
+			      OMX_IndexParamPortDefinition, &param);
+	  assert (error == OMX_ErrorNone);
 
-         param.nBufferSize = size;
-         param.nBufferCountActual = num_buffers;
+	  param.nBufferSize = size;
+	  param.nBufferCountActual = num_buffers;
 
-         error = OMX_SetParameter(ILC_GET_HANDLE(st->audio_render), OMX_IndexParamPortDefinition, &param);
-         assert(error == OMX_ErrorNone);
+	  error =
+	    OMX_SetParameter (ILC_GET_HANDLE (st->audio_render),
+			      OMX_IndexParamPortDefinition, &param);
+	  assert (error == OMX_ErrorNone);
 
-         // set the pcm parameters
-         memset(&pcm, 0, sizeof(OMX_AUDIO_PARAM_PCMMODETYPE));
-         pcm.nSize = sizeof(OMX_AUDIO_PARAM_PCMMODETYPE);
-         pcm.nVersion.nVersion = OMX_VERSION;
-         pcm.nPortIndex = 100;
-         pcm.nChannels = OUT_CHANNELS(num_channels);
-         pcm.eNumData = OMX_NumericalDataSigned;
-         pcm.eEndian = OMX_EndianLittle;
-         pcm.nSamplingRate = sample_rate;
-         pcm.bInterleaved = OMX_TRUE;
-         pcm.nBitPerSample = bit_depth;
-         pcm.ePCMMode = OMX_AUDIO_PCMModeLinear;
+	  // set the pcm parameters
+	  memset (&pcm, 0, sizeof (OMX_AUDIO_PARAM_PCMMODETYPE));
+	  pcm.nSize = sizeof (OMX_AUDIO_PARAM_PCMMODETYPE);
+	  pcm.nVersion.nVersion = OMX_VERSION;
+	  pcm.nPortIndex = 100;
+	  pcm.nChannels = OUT_CHANNELS (num_channels);
+	  pcm.eNumData = OMX_NumericalDataSigned;
+	  pcm.eEndian = OMX_EndianLittle;
+	  pcm.nSamplingRate = sample_rate;
+	  pcm.bInterleaved = OMX_TRUE;
+	  pcm.nBitPerSample = bit_depth;
+	  pcm.ePCMMode = OMX_AUDIO_PCMModeLinear;
 
-         switch(num_channels) {
-         case 1:
-            pcm.eChannelMapping[0] = OMX_AUDIO_ChannelCF;
-            break;
-         case 3:
-            pcm.eChannelMapping[2] = OMX_AUDIO_ChannelCF;
-            pcm.eChannelMapping[1] = OMX_AUDIO_ChannelRF;
-            pcm.eChannelMapping[0] = OMX_AUDIO_ChannelLF;
-            break;
-         case 8:
-            pcm.eChannelMapping[7] = OMX_AUDIO_ChannelRS;
-         case 7:
-            pcm.eChannelMapping[6] = OMX_AUDIO_ChannelLS;
-         case 6:
-            pcm.eChannelMapping[5] = OMX_AUDIO_ChannelRR;
-         case 5:
-            pcm.eChannelMapping[4] = OMX_AUDIO_ChannelLR;
-         case 4:
-            pcm.eChannelMapping[3] = OMX_AUDIO_ChannelLFE;
-            pcm.eChannelMapping[2] = OMX_AUDIO_ChannelCF;
-         case 2:
-            pcm.eChannelMapping[1] = OMX_AUDIO_ChannelRF;
-            pcm.eChannelMapping[0] = OMX_AUDIO_ChannelLF;
-            break;
-         }
+	  switch (num_channels)
+	    {
+	    case 1:
+	      pcm.eChannelMapping[0] = OMX_AUDIO_ChannelCF;
+	      break;
+	    case 3:
+	      pcm.eChannelMapping[2] = OMX_AUDIO_ChannelCF;
+	      pcm.eChannelMapping[1] = OMX_AUDIO_ChannelRF;
+	      pcm.eChannelMapping[0] = OMX_AUDIO_ChannelLF;
+	      break;
+	    case 8:
+	      pcm.eChannelMapping[7] = OMX_AUDIO_ChannelRS;
+	    case 7:
+	      pcm.eChannelMapping[6] = OMX_AUDIO_ChannelLS;
+	    case 6:
+	      pcm.eChannelMapping[5] = OMX_AUDIO_ChannelRR;
+	    case 5:
+	      pcm.eChannelMapping[4] = OMX_AUDIO_ChannelLR;
+	    case 4:
+	      pcm.eChannelMapping[3] = OMX_AUDIO_ChannelLFE;
+	      pcm.eChannelMapping[2] = OMX_AUDIO_ChannelCF;
+	    case 2:
+	      pcm.eChannelMapping[1] = OMX_AUDIO_ChannelRF;
+	      pcm.eChannelMapping[0] = OMX_AUDIO_ChannelLF;
+	      break;
+	    }
 
-         error = OMX_SetParameter(ILC_GET_HANDLE(st->audio_render), OMX_IndexParamAudioPcm, &pcm);
-         assert(error == OMX_ErrorNone);
+	  error =
+	    OMX_SetParameter (ILC_GET_HANDLE (st->audio_render),
+			      OMX_IndexParamAudioPcm, &pcm);
+	  assert (error == OMX_ErrorNone);
 
-         ilclient_change_component_state(st->audio_render, OMX_StateIdle);
-         if(ilclient_enable_port_buffers(st->audio_render, 100, NULL, NULL, NULL) < 0)
-         {
-            // error
-            ilclient_change_component_state(st->audio_render, OMX_StateLoaded);
-            ilclient_cleanup_components(st->list);
+	  ilclient_change_component_state (st->audio_render, OMX_StateIdle);
+	  if (ilclient_enable_port_buffers
+	      (st->audio_render, 100, NULL, NULL, NULL) < 0)
+	    {
+	      // error
+	      ilclient_change_component_state (st->audio_render,
+					       OMX_StateLoaded);
+	      ilclient_cleanup_components (st->list);
 
-            error = OMX_Deinit();
-            assert(error == OMX_ErrorNone);
+	      error = OMX_Deinit ();
+	      assert (error == OMX_ErrorNone);
 
-            ilclient_destroy(st->client);
+	      ilclient_destroy (st->client);
 
-            sem_destroy(&st->sema);
-            free(st);
-            *handle = NULL;
-            return -1;
-         }
+	      sem_destroy (&st->sema);
+	      free (st);
+	      *handle = NULL;
+	      return -1;
+	    }
 
-         ilclient_change_component_state(st->audio_render, OMX_StateExecuting);
-      }
-   }
+	  ilclient_change_component_state (st->audio_render,
+					   OMX_StateExecuting);
+	}
+    }
 
-   return ret;
+  return ret;
 }
 
-int32_t audioplay_delete(AUDIOPLAY_STATE_T *st)
+int32_t
+audioplay_delete (AUDIOPLAY_STATE_T * st)
 {
-   OMX_ERRORTYPE error;
+  OMX_ERRORTYPE error;
 
-   ilclient_change_component_state(st->audio_render, OMX_StateIdle);
+  ilclient_change_component_state (st->audio_render, OMX_StateIdle);
 
-   error = OMX_SendCommand(ILC_GET_HANDLE(st->audio_render), OMX_CommandStateSet, OMX_StateLoaded, NULL);
-   assert(error == OMX_ErrorNone);
+  error =
+    OMX_SendCommand (ILC_GET_HANDLE (st->audio_render), OMX_CommandStateSet,
+		     OMX_StateLoaded, NULL);
+  assert (error == OMX_ErrorNone);
 
-   ilclient_disable_port_buffers(st->audio_render, 100, st->user_buffer_list, NULL, NULL);
-   ilclient_change_component_state(st->audio_render, OMX_StateLoaded);
-   ilclient_cleanup_components(st->list);
+  ilclient_disable_port_buffers (st->audio_render, 100, st->user_buffer_list,
+				 NULL, NULL);
+  ilclient_change_component_state (st->audio_render, OMX_StateLoaded);
+  ilclient_cleanup_components (st->list);
 
-   error = OMX_Deinit();
-   assert(error == OMX_ErrorNone);
+  error = OMX_Deinit ();
+  assert (error == OMX_ErrorNone);
 
-   ilclient_destroy(st->client);
+  ilclient_destroy (st->client);
 
-   sem_destroy(&st->sema);
-   free(st);
+  sem_destroy (&st->sema);
+  free (st);
 
-   return 0;
+  return 0;
 }
 
-uint8_t *audioplay_get_buffer(AUDIOPLAY_STATE_T *st)
+uint8_t *
+audioplay_get_buffer (AUDIOPLAY_STATE_T * st)
 {
-   OMX_BUFFERHEADERTYPE *hdr = NULL;
+  OMX_BUFFERHEADERTYPE *hdr = NULL;
 
-   hdr = ilclient_get_input_buffer(st->audio_render, 100, 0);
+  hdr = ilclient_get_input_buffer (st->audio_render, 100, 0);
 
-   if(hdr)
-   {
+  if (hdr)
+    {
       // put on the user list
-      sem_wait(&st->sema);
+      sem_wait (&st->sema);
 
       hdr->pAppPrivate = st->user_buffer_list;
       st->user_buffer_list = hdr;
 
-      sem_post(&st->sema);
-   }
+      sem_post (&st->sema);
+    }
 
-   return hdr ? hdr->pBuffer : NULL;
+  return hdr ? hdr->pBuffer : NULL;
 }
 
-int32_t audioplay_play_buffer(AUDIOPLAY_STATE_T *st,
-                              uint8_t *buffer,
-                              uint32_t length)
+int32_t
+audioplay_play_buffer (AUDIOPLAY_STATE_T * st,
+		       uint8_t * buffer, uint32_t length)
 {
-   OMX_BUFFERHEADERTYPE *hdr = NULL, *prev = NULL;
-   int32_t ret = -1;
+  OMX_BUFFERHEADERTYPE *hdr = NULL, *prev = NULL;
+  int32_t ret = -1;
 
-   if(length % st->bytes_per_sample)
-      return ret;
+  if (length % st->bytes_per_sample)
+    return ret;
 
-   sem_wait(&st->sema);
+  sem_wait (&st->sema);
 
-   // search through user list for the right buffer header
-   hdr = st->user_buffer_list;
-   while(hdr != NULL && hdr->pBuffer != buffer && hdr->nAllocLen < length)
-   {
+  // search through user list for the right buffer header
+  hdr = st->user_buffer_list;
+  while (hdr != NULL && hdr->pBuffer != buffer && hdr->nAllocLen < length)
+    {
       prev = hdr;
       hdr = hdr->pAppPrivate;
-   }
+    }
 
-   if(hdr) // we found it, remove from list
-   {
+  if (hdr)			// we found it, remove from list
+    {
       ret = 0;
-      if(prev)
-         prev->pAppPrivate = hdr->pAppPrivate;
+      if (prev)
+	prev->pAppPrivate = hdr->pAppPrivate;
       else
-         st->user_buffer_list = hdr->pAppPrivate;
-   }
+	st->user_buffer_list = hdr->pAppPrivate;
+    }
 
-   sem_post(&st->sema);
+  sem_post (&st->sema);
 
-   if(hdr)
-   {
+  if (hdr)
+    {
       OMX_ERRORTYPE error;
 
       hdr->pAppPrivate = NULL;
       hdr->nOffset = 0;
       hdr->nFilledLen = length;
 
-      error = OMX_EmptyThisBuffer(ILC_GET_HANDLE(st->audio_render), hdr);
-      assert(error == OMX_ErrorNone);
-   }
+      error = OMX_EmptyThisBuffer (ILC_GET_HANDLE (st->audio_render), hdr);
+      assert (error == OMX_ErrorNone);
+    }
 
-   return ret;
+  return ret;
 }
 
-int32_t audioplay_set_dest(AUDIOPLAY_STATE_T *st, const char *name)
+int32_t
+audioplay_set_dest (AUDIOPLAY_STATE_T * st, const char *name)
 {
-   int32_t success = -1;
-   OMX_CONFIG_BRCMAUDIODESTINATIONTYPE ar_dest;
+  int32_t success = -1;
+  OMX_CONFIG_BRCMAUDIODESTINATIONTYPE ar_dest;
 
-   if (name && strlen(name) < sizeof(ar_dest.sName))
-   {
+  if (name && strlen (name) < sizeof (ar_dest.sName))
+    {
       OMX_ERRORTYPE error;
-      memset(&ar_dest, 0, sizeof(ar_dest));
-      ar_dest.nSize = sizeof(OMX_CONFIG_BRCMAUDIODESTINATIONTYPE);
+      memset (&ar_dest, 0, sizeof (ar_dest));
+      ar_dest.nSize = sizeof (OMX_CONFIG_BRCMAUDIODESTINATIONTYPE);
       ar_dest.nVersion.nVersion = OMX_VERSION;
-      strcpy((char *)ar_dest.sName, name);
+      strcpy ((char *) ar_dest.sName, name);
 
-      error = OMX_SetConfig(ILC_GET_HANDLE(st->audio_render), OMX_IndexConfigBrcmAudioDestination, &ar_dest);
-      assert(error == OMX_ErrorNone);
+      error =
+	OMX_SetConfig (ILC_GET_HANDLE (st->audio_render),
+		       OMX_IndexConfigBrcmAudioDestination, &ar_dest);
+      assert (error == OMX_ErrorNone);
       success = 0;
-   }
+    }
 
-   return success;
+  return success;
 }
 
 
-uint32_t audioplay_get_latency(AUDIOPLAY_STATE_T *st)
+uint32_t
+audioplay_get_latency (AUDIOPLAY_STATE_T * st)
 {
-   OMX_PARAM_U32TYPE param;
-   OMX_ERRORTYPE error;
+  OMX_PARAM_U32TYPE param;
+  OMX_ERRORTYPE error;
 
-   memset(&param, 0, sizeof(OMX_PARAM_U32TYPE));
-   param.nSize = sizeof(OMX_PARAM_U32TYPE);
-   param.nVersion.nVersion = OMX_VERSION;
-   param.nPortIndex = 100;
+  memset (&param, 0, sizeof (OMX_PARAM_U32TYPE));
+  param.nSize = sizeof (OMX_PARAM_U32TYPE);
+  param.nVersion.nVersion = OMX_VERSION;
+  param.nPortIndex = 100;
 
-   error = OMX_GetConfig(ILC_GET_HANDLE(st->audio_render), OMX_IndexConfigAudioRenderingLatency, &param);
-   assert(error == OMX_ErrorNone);
+  error =
+    OMX_GetConfig (ILC_GET_HANDLE (st->audio_render),
+		   OMX_IndexConfigAudioRenderingLatency, &param);
+  assert (error == OMX_ErrorNone);
 
-   return param.nU32;
+  return param.nU32;
 }
 
 #define CTTW_SLEEP_TIME 10
 #define MIN_LATENCY_TIME 20
 
-static const char *audio_dest[] = {"local", "hdmi"};
-void play_api_test(int samplerate, int bitdepth, int nchannels, int dest)
+static const char *audio_dest_name[] = { "local", "hdmi" };
+
+typedef uint8_t (*BufferFiller)(uint8_t *buf, void *context);
+
+void
+play_audio (int samplerate, int bitdepth, int nchannels, int dest, BufferFiller filler, void *context)
 {
-   double TONE_FREQUENCY = 261.6; // Hz
-   double TONE_PERIOD = 1.0 / TONE_FREQUENCY; // fraction of a second covered by one tone period.
-   double TONE_SAMPLES = TONE_PERIOD * samplerate; // number of samples in one tone period.
-   double STEP_SIZE = 1024 / TONE_SAMPLES; // use to step through a periodic function to get the desired tone.
 
-   AUDIOPLAY_STATE_T *st;
-   int32_t ret;
-   unsigned int i, j, n;
-   float phase = 0.0;
-   int buffer_size = (BUFFER_SIZE_SAMPLES * bitdepth * OUT_CHANNELS(nchannels))>>3; // >>3 divides by 8 to convert bits to bytes
+  AUDIOPLAY_STATE_T *st;
+  int32_t ret;
+  int buffer_size = (BUFFER_SIZE_SAMPLES * bitdepth * OUT_CHANNELS (nchannels)) >> 3;	// >>3 divides by 8 to convert bits to bytes
 
-   assert(dest == 0 || dest == 1);
+  assert (dest == 0 || dest == 1);
 
-   ret = audioplay_create(&st, samplerate, nchannels, bitdepth, 10, buffer_size);
-   assert(ret == 0);
+  ret =
+    audioplay_create (&st, samplerate, nchannels, bitdepth, 10, buffer_size);
+  assert (ret == 0);
 
-   ret = audioplay_set_dest(st, audio_dest[dest]);
-   assert(ret == 0);
+  ret = audioplay_set_dest (st, audio_dest_name[dest]);
+  assert (ret == 0);
 
-   // iterate for TIME seconds worth of packets
-   int TIME = 5;
-   for (n=0; n<((samplerate * TIME) / BUFFER_SIZE_SAMPLES); n++)
-   {
-printf("n = %d\n", n);
+  uint8_t running = 0x1;
+  while (running) 
+    {
       uint8_t *buf;
-      int16_t *p;
       uint32_t latency;
 
-      while((buf = audioplay_get_buffer(st)) == NULL) {
-	 printf("waiting for buffer\n");
-         usleep(10*1000);
-      }
+      while ((buf = audioplay_get_buffer (st)) == NULL)
+	{
+	  usleep (10 * 1000);
+	}
 
-      p = (int16_t *) buf;
+      // Here we want to call a function to fill the buffer.
+      // Let's have the function also tell us when to stop playing.
 
-      // fill the buffer
-      for (i=0; i<BUFFER_SIZE_SAMPLES; i++) {
-//	 int16_t val = Sinewave[(int) phase];
-
-         int16_t val = (int16_t) 32767.0 * sin(phase / 1024.0 * 2 * 3.14159);
-	 phase += STEP_SIZE;
-	 while (phase >= N_WAVE) {
-	 	phase -= N_WAVE;
-	 }
-
-	 // fill the channels (mono)
-         for(j=0; j<OUT_CHANNELS(nchannels); j++) {
-            if (bitdepth == 32)
-               *p++ = 0;
-            *p++ = val;
-         }
-      }
+      running = filler (buf, context);
+      if (!running)
+	{
+	  break;
+	}
 
       // try and wait for a minimum latency time (in ms) before
       // sending the next packet
-      while((latency = audioplay_get_latency(st)) > (samplerate * (MIN_LATENCY_TIME + CTTW_SLEEP_TIME) / 1000)) {
-	 printf("waiting for playthrough (latency = %d)...\n", latency);
-         usleep(CTTW_SLEEP_TIME*1000);
-      }
+      while ((latency =
+	      audioplay_get_latency (st)) >
+	     (samplerate * (MIN_LATENCY_TIME + CTTW_SLEEP_TIME) / 1000))
+	{
+	  usleep (CTTW_SLEEP_TIME * 1000);
+	}
 
-      ret = audioplay_play_buffer(st, buf, buffer_size);
-      assert(ret == 0);
-   }
+      ret = audioplay_play_buffer (st, buf, buffer_size);
+      assert (ret == 0);
+    }
 
-   audioplay_delete(st);
+  audioplay_delete (st);
 }
 
-int main (int argc, char **argv)
+
+int audio_dest = 0;		// 0=headphones, 1=hdmi
+int samplerate = 48000;		// audio sample rate in Hz
+int channels = 2;		// numnber of audio channels
+int bitdepth = 16;		// number of bits per sample
+float phase = 0.0;
+int fills = 0;			// number of times we've filled the buffer
+
+uint8_t
+buffer_fill (uint8_t * buf, void *context)
 {
-   // 0=headphones, 1=hdmi
-   int audio_dest = 0;
-   // audio sample rate in Hz
-   int samplerate = 48000;
-   // numnber of audio channels
-   int channels = 2;
-   // number of bits per sample
-   int bitdepth = 16;
-   bcm_host_init();
+  fills++;
 
-   if (argc > 1)
-      audio_dest = atoi(argv[1]);
-   if (argc > 2)
-      channels = atoi(argv[2]);
-   if (argc > 3)
-      samplerate = atoi(argv[3]);
+  double TONE_FREQUENCY = 261.6;	// Hz
+  double TONE_PERIOD = 1.0 / TONE_FREQUENCY;	// fraction of a second covered by one tone period.
+  double TONE_SAMPLES = TONE_PERIOD * samplerate;	// number of samples in one tone period.
+  double STEP_SIZE = 1024 / TONE_SAMPLES;	// use to step through a periodic function to get the desired tone.
 
-   printf("Outputting audio to %s\n", audio_dest==0 ? "analogue":"hdmi");
+  int16_t *p = (int16_t *) buf;
 
-   play_api_test(samplerate, bitdepth, channels, audio_dest);
-   return 0;
+  // fill the buffer
+  for (int i = 0; i < BUFFER_SIZE_SAMPLES; i++)
+    {
+//      int16_t val = Sinewave[(int) phase];
+
+      int16_t val = (int16_t) 32767.0 * sin(phase / 1024.0 * 2 * 3.14159);
+      phase += STEP_SIZE;
+      while (phase >= N_WAVE)
+	{
+	  phase -= N_WAVE;
+	}
+
+      // fill the channels (mono)
+      int j;
+      for (j = 0; j < OUT_CHANNELS (channels); j++)
+	{
+	  if (bitdepth == 32)
+	    *p++ = 0;
+	  *p++ = val;
+	}
+    }
+
+  int TIME = 3;
+  return fills < ((samplerate * TIME) / BUFFER_SIZE_SAMPLES);
 }
 
+int
+main (int argc, char **argv)
+{
+  bcm_host_init ();
+
+  if (argc > 1)
+    audio_dest = atoi (argv[1]);
+  if (argc > 2)
+    channels = atoi (argv[2]);
+  if (argc > 3)
+    samplerate = atoi (argv[3]);
+
+  printf ("Outputting audio to %s\n", audio_dest == 0 ? "analogue" : "hdmi");
+
+  play_audio (samplerate, bitdepth, channels, audio_dest, buffer_fill, NULL);
+  return 0;
+}
