@@ -33,47 +33,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include <math.h>
 
 #include "bcm_host.h"
 #include "ilclient.h"
 
-#define N_WAVE          1024	/* dimension of Sinewave[] */
-#define OUT_CHANNELS(num_channels) ((num_channels) > 4 ? 8: (num_channels) > 2 ? 4: (num_channels))
-extern short Sinewave[];
-
-#define BUFFER_SIZE_SAMPLES 1024
-
 typedef int int32_t;
+
+#define OUT_CHANNELS(num_channels) ((num_channels) > 4 ? 8: (num_channels) > 2 ? 4: (num_channels))
 
 ///////
 
-typedef struct {
+typedef struct
+{
   int audio_dest;		// 0=headphones, 1=hdmi
   int samplerate;		// audio sample rate in Hz
-  int channels;		// numnber of audio channels
-  int bitdepth;		// number of bits per sample
+  int channels;			// numnber of audio channels
+  int bitdepth;			// number of bits per sample
+  int buffer_size_samples;	// number of samples per buffer
   float phase;
   int fills;			// number of times we've filled the buffer
-} PLAYBACK_CONTEXT_T;
+} AUDIOPLAY_CONTEXT_T;
 
-void init_playback_context(PLAYBACK_CONTEXT_T *context) {
-  context->audio_dest = 0;		// 0=headphones, 1=hdmi
-  context->samplerate = 48000;		// audio sample rate in Hz
-  context->channels = 2;		// numnber of audio channels
-  context->bitdepth = 16;		// number of bits per sample
+void
+init_playback_context (AUDIOPLAY_CONTEXT_T * context)
+{
+  context->audio_dest = 0;	// 0=headphones, 1=hdmi
+  context->samplerate = 48000;	// audio sample rate in Hz
+  context->channels = 2;	// numnber of audio channels
+  context->bitdepth = 16;	// number of bits per sample
+  context->buffer_size_samples = 1024;
   context->phase = 0.0;
-  context->fills = 0;			// number of times we've filled the buffer
+  context->fills = 0;		// number of times we've filled the buffer
 }
 
-int audio_dest = 0;		// 0=headphones, 1=hdmi
-int samplerate = 48000;		// audio sample rate in Hz
-int channels = 2;		// numnber of audio channels
-int bitdepth = 16;		// number of bits per sample
-float phase = 0.0;
-int fills = 0;			// number of times we've filled the buffer
+typedef uint8_t (*AudioplayCallback) (uint8_t * buf, AUDIOPLAY_CONTEXT_T * context);
 
 //////
-
 
 typedef struct
 {
@@ -100,7 +96,7 @@ audioplay_create (AUDIOPLAY_STATE_T ** handle,
 		  uint32_t bit_depth,
 		  uint32_t num_buffers, uint32_t buffer_size)
 {
-  uint32_t bytes_per_sample = (bit_depth * OUT_CHANNELS (num_channels)) >> 3;
+  uint32_t bytes_per_sample = (bit_depth * num_channels) >> 3;
   int32_t ret = -1;
 
   *handle = NULL;
@@ -176,7 +172,7 @@ audioplay_create (AUDIOPLAY_STATE_T ** handle,
 	  pcm.nSize = sizeof (OMX_AUDIO_PARAM_PCMMODETYPE);
 	  pcm.nVersion.nVersion = OMX_VERSION;
 	  pcm.nPortIndex = 100;
-	  pcm.nChannels = OUT_CHANNELS (num_channels);
+	  pcm.nChannels = num_channels;
 	  pcm.eNumData = OMX_NumericalDataSigned;
 	  pcm.eEndian = OMX_EndianLittle;
 	  pcm.nSamplingRate = sample_rate;
@@ -388,27 +384,27 @@ audioplay_get_latency (AUDIOPLAY_STATE_T * st)
 
 static const char *audio_dest_name[] = { "local", "hdmi" };
 
-typedef uint8_t (*BufferFiller)(uint8_t *buf, PLAYBACK_CONTEXT_T *context);
 
 void
-play_audio (int samplerate, int bitdepth, int nchannels, int dest, BufferFiller filler, void *context)
+audioplay (AUDIOPLAY_CONTEXT_T * context, AudioplayCallback filler)
 {
-
+  context->channels = OUT_CHANNELS (context->channels);
   AUDIOPLAY_STATE_T *st;
   int32_t ret;
-  int buffer_size = (BUFFER_SIZE_SAMPLES * bitdepth * OUT_CHANNELS (nchannels)) >> 3;	// >>3 divides by 8 to convert bits to bytes
+  int buffer_size = (context->buffer_size_samples * context->bitdepth * context->channels) >> 3;	// >>3 divides by 8 to convert bits to bytes
 
-  assert (dest == 0 || dest == 1);
+  assert (context->audio_dest == 0 || context->audio_dest == 1);
 
   ret =
-    audioplay_create (&st, samplerate, nchannels, bitdepth, 10, buffer_size);
+    audioplay_create (&st, context->samplerate, context->channels,
+		      context->bitdepth, 10, buffer_size);
   assert (ret == 0);
 
-  ret = audioplay_set_dest (st, audio_dest_name[dest]);
+  ret = audioplay_set_dest (st, audio_dest_name[context->audio_dest]);
   assert (ret == 0);
 
   uint8_t running = 0x1;
-  while (running) 
+  while (running)
     {
       uint8_t *buf;
       uint32_t latency;
@@ -431,7 +427,8 @@ play_audio (int samplerate, int bitdepth, int nchannels, int dest, BufferFiller 
       // sending the next packet
       while ((latency =
 	      audioplay_get_latency (st)) >
-	     (samplerate * (MIN_LATENCY_TIME + CTTW_SLEEP_TIME) / 1000))
+	     (context->samplerate * (MIN_LATENCY_TIME + CTTW_SLEEP_TIME) /
+	      1000))
 	{
 	  usleep (CTTW_SLEEP_TIME * 1000);
 	}
@@ -443,42 +440,47 @@ play_audio (int samplerate, int bitdepth, int nchannels, int dest, BufferFiller 
   audioplay_delete (st);
 }
 
-uint8_t
-buffer_fill (uint8_t * buf, PLAYBACK_CONTEXT_T *context)
-{
-  fills++;
 
-  double TONE_FREQUENCY = 261.6;	// Hz
+#define N_WAVE          1024	/* dimension of Sinewave[] */
+extern short Sinewave[];
+
+uint8_t
+buffer_fill (uint8_t * buf, AUDIOPLAY_CONTEXT_T * context)
+{
+  context->fills++;
+
+  double TONE_FREQUENCY = 261.6 * 2;	// Hz
   double TONE_PERIOD = 1.0 / TONE_FREQUENCY;	// fraction of a second covered by one tone period.
-  double TONE_SAMPLES = TONE_PERIOD * samplerate;	// number of samples in one tone period.
-  double STEP_SIZE = 1024 / TONE_SAMPLES;	// use to step through a periodic function to get the desired tone.
+  double TONE_SAMPLES = TONE_PERIOD * context->samplerate;	// number of samples in one tone period.
+  double STEP_SIZE = N_WAVE / TONE_SAMPLES;	// use to step through a periodic function to get the desired tone.
 
   int16_t *p = (int16_t *) buf;
 
   // fill the buffer
-  for (int i = 0; i < BUFFER_SIZE_SAMPLES; i++)
+  for (int i = 0; i < context->buffer_size_samples; i++)
     {
-//      int16_t val = Sinewave[(int) phase];
+      int16_t val = Sinewave[(int) context->phase];
 
-      int16_t val = (int16_t) 32767.0 * sin(phase / 1024.0 * 2 * 3.14159);
-      phase += STEP_SIZE;
-      while (phase >= N_WAVE)
+//      int16_t val = (int16_t) 32767.0 * sin(context->phase / N_WAVE * 2.0 * 3.14159);
+      context->phase += STEP_SIZE;
+      while (context->phase >= N_WAVE)
 	{
-	  phase -= N_WAVE;
+	  context->phase -= N_WAVE;
 	}
 
       // fill the channels (mono)
       int j;
-      for (j = 0; j < OUT_CHANNELS (channels); j++)
+      for (j = 0; j < context->channels; j++)
 	{
-	  if (bitdepth == 32)
+	  if (context->bitdepth == 32)
 	    *p++ = 0;
 	  *p++ = val;
 	}
     }
 
   int TIME = 3;
-  return fills < ((samplerate * TIME) / BUFFER_SIZE_SAMPLES);
+  return context->fills <
+    ((context->samplerate * TIME) / context->buffer_size_samples);
 }
 
 int
@@ -486,18 +488,22 @@ main (int argc, char **argv)
 {
   bcm_host_init ();
 
-  PLAYBACK_CONTEXT_T context;
-  init_playback_context(&context);
+  AUDIOPLAY_CONTEXT_T context;
+  init_playback_context (&context);
+  context.buffer_size_samples = 1024;
 
   if (argc > 1)
-    audio_dest = atoi (argv[1]);
+    context.audio_dest = atoi (argv[1]);
   if (argc > 2)
-    channels = atoi (argv[2]);
+    context.channels = atoi (argv[2]);
   if (argc > 3)
-    samplerate = atoi (argv[3]);
+    context.samplerate = atoi (argv[3]);
 
-  printf ("Outputting audio to %s\n", audio_dest == 0 ? "analogue" : "hdmi");
-
-  play_audio (samplerate, bitdepth, channels, audio_dest, buffer_fill, &context);
+  if (context.audio_dest < 2)
+    {
+      printf ("Outputting audio to %s\n",
+	      audio_dest_name[context.audio_dest]);
+      audioplay (&context, buffer_fill);
+    }
   return 0;
 }
