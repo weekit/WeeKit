@@ -2,11 +2,11 @@ extern crate weekit;
 
 use std::ffi::CString;
 use std::os::raw::c_char;
-use weekit::openvg::VGfloat;
+use weekit::openvg::{vgDestroyImage, vgSetPixels, VGImage};
 use weekit::*;
 
 extern "C" {
-    fn Image(x: VGfloat, y: VGfloat, w: i32, h: i32, filename: *const c_char) -> ();
+    fn createImageFromJpegFile(filename: *const c_char) -> VGImage;
 }
 
 struct Demo<'a> {
@@ -35,13 +35,9 @@ impl<'a> Application for Demo<'a> {
         canvas.background(192, 0, 0);
 
         unsafe {
-            Image(
-                0.0,
-                0.0,
-                800,
-                480,
-                CString::new("/tmp/sample.jpg").unwrap().as_ptr(),
-            );
+            let image = createImageFromJpegFile(CString::new("/tmp/sample.jpg").unwrap().as_ptr());
+            vgSetPixels(0, 0, image, 0, 0, 800, 480);
+            vgDestroyImage(image);
         }
 
         draw::fill(255, 255, 255, 1.0); // White text
