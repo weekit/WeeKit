@@ -1,26 +1,40 @@
+extern crate reqwest;
 extern crate weekit;
 
-use std::ffi::CString;
-use std::os::raw::c_char;
-use weekit::openvg::{vgDestroyImage, vgSetPixels, VGImage};
+use std::io::Read;
+use weekit::openvg::{vgSetPixels, VGImage, VGubyte};
 use weekit::*;
 
+const IMAGE_PATH: &str = "https://picsum.photos/800/480";
+
 extern "C" {
-    fn createImageFromJpegFile(filename: *const c_char) -> VGImage;
+    fn createImageFromJpegData(data: *const VGubyte, length: usize) -> VGImage;
 }
 
 struct Demo<'a> {
     serif_typeface: Option<font::Font<'a>>,
+    image: VGImage,
 }
 
 impl<'a> Demo<'a> {
     fn new() -> Demo<'a> {
         Demo {
             serif_typeface: None,
+            image: 0,
         }
     }
     fn load_fonts(&mut self) -> () {
         self.serif_typeface = Some(font::Font::serif());
+        self.load_image();
+    }
+    fn load_image(&mut self) -> () {
+        let mut resp = reqwest::get(IMAGE_PATH).unwrap();
+        assert!(resp.status().is_success());
+        let mut buffer = Vec::new();
+        resp.read_to_end(&mut buffer).unwrap();
+        unsafe {
+            self.image = createImageFromJpegData(buffer.as_ptr(), buffer.len());
+        }
     }
 }
 
@@ -35,18 +49,15 @@ impl<'a> Application for Demo<'a> {
         canvas.background(192, 0, 0);
 
         unsafe {
-            let image = createImageFromJpegFile(CString::new("/tmp/sample.jpg").unwrap().as_ptr());
-            vgSetPixels(0, 0, image, 0, 0, 800, 480);
-            vgDestroyImage(image);
+            vgSetPixels(0, 0, self.image, 0, 0, 800, 480);
         }
 
         draw::fill(255, 255, 255, 1.0); // White text
-        let title = "https://picsum.photos/800/400";
         match self.serif_typeface {
             Some(ref font) => draw::text_mid(
                 width as f32 / 2.0,
                 height as f32 * 0.1,
-                title,
+                IMAGE_PATH,
                 font,
                 width / 30,
             ),
