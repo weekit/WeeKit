@@ -1,52 +1,18 @@
-SDK=./third-party/amanithvg-sdk
-
 all:	rocks hello life colors image
 
-libs:	lib/libAmanithVG.4.dylib lib/libplatform.dylib
-
-lib/libAmanithVG.4.dylib: ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib
-	mkdir -p lib
-	cp ${SDK}/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib lib
-
-lib/libplatform.dylib: platform/common/image.c platform/macOS/platform.m
-	mkdir -p lib
-	# Build libplatform.
-	clang \
-		platform/common/image.c \
-		platform/macOS/platform.m \
-		-I platform/macOS \
-		-g \
-		-I ${SDK}/include \
-		-L ${SDK}/lib/macosx/ub/gle/standalone \
-		-lAmanithVG \
-		-I /usr/local/include \
-		-L /usr/local/lib \
-		-ljpeg \
-		-I src \
-		-lobjc \
-		-framework Cocoa \
-		-framework CoreVideo \
-		-framework CoreFoundation \
-		-framework QuartzCore \
-		-framework OpenGL \
-		-shared \
-		-fpic \
-		-o lib/libplatform.dylib
-	install_name_tool -id "@rpath/../dylibs/libplatform.dylib" lib/libplatform.dylib 
-
-rocks: libs
+rocks: 
 	tools/build.macOS rocks
 
-hello: libs
+hello: 
 	tools/build.macOS hello
 
-life: libs
+life: 
 	tools/build.macOS life
 
-colors: libs
+colors: 
 	tools/build.macOS colors
 
-image: libs
+image: 
 	tools/build.macOS image
 
 clean:

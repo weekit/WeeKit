@@ -1,11 +1,37 @@
 use std::env;
+use std::path::Path;
+use std::process::Command;
 
 fn main() {
     let target = env::var("TARGET").unwrap();
+    println!("target {}", target);
+
     if target.contains("apple") {
-        println!("cargo:rustc-link-search=native=../../lib");
+        let out_dir = env::var("OUT_DIR").unwrap();
+        Command::new("tools/compile.macOS")
+            .arg(&"platform/macOS/platform.m")
+            .arg(&format!("{}/platform.o", out_dir))
+            .status()
+            .unwrap();
+        Command::new("tools/compile.macOS")
+            .arg(&"platform/common/image.c")
+            .arg(&format!("{}/image.o", out_dir))
+            .status()
+            .unwrap();
+        Command::new("ar")
+            .args(&["crus", "libplatform.a", "platform.o", "image.o"])
+            .current_dir(&Path::new(&out_dir))
+            .status()
+            .unwrap();
+        println!("cargo:rustc-link-search=native={}", out_dir);
         println!("cargo:rustc-link-lib=platform");
+        println!("cargo:rustc-link-search=native=/usr/local/lib");
+        println!("cargo:rustc-link-lib=jpeg");
+        println!("cargo:rustc-link-search=native=../../third-party/amanithvg-sdk/lib/macosx/ub/gle/standalone");
         println!("cargo:rustc-link-lib=AmanithVG.4");
+        println!("cargo:rustc-link-lib=framework=Cocoa");
+        println!("cargo:rustc-link-lib=framework=OpenGL");
+        println!("cargo:rustc-link-lib=framework=QuartzCore");
     } else {
         println!("cargo:rustc-link-search=native=../../lib");
         println!("cargo:rustc-link-search=native=/opt/vc/lib");

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+SDK=../../third-party/amanithvg-sdk
+
+echo $0 $@
+
+clang \
+	$1 \
+	-c \
+       	-g \
+       	-I platform/macOS \
+       	-I ${SDK}/include \
+       	-I /usr/local/include \
+       	-I src \
+       	-fpic \
+	-o $2
