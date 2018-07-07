@@ -1,9 +1,7 @@
 all:	app
 
 app:
-	cd rust/weekit; cargo build --example image
+	cargo build --example image
 
 clean:
-	cd rust/weekit; cargo clean
-	cd rust/svg; cargo clean
-	rm -rf lib
+	cargo clean

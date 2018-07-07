@@ -12,7 +12,7 @@ NAME_LOWER=$1
 NAME_UPPER=`echo "${NAME_LOWER}" | perl -ne 'print ucfirst'`
 
 # Build the main (Rust) binary.
-cd rust/weekit; cargo fmt; cargo build --example ${NAME_LOWER}; cd ../..;
+cargo fmt; cargo build --example ${NAME_LOWER} -j 8
 
 # Build the .app bundle.
 APP=${NAME_UPPER}.app
@@ -24,5 +24,5 @@ perl -pi -e "s/{{NAME_UPPER}}/${NAME_UPPER}/" ${APP}/Contents/Info.plist
 perl -pi -e "s/{{NAME_LOWER}}/${NAME_LOWER}/" ${APP}/Contents/Info.plist
 cp platform/macOS/tutorial.icns ${APP}/Contents/Resources
 cp third-party/amanithvg-sdk/lib/macosx/ub/gle/standalone/libAmanithVG.4.dylib ${APP}/Contents/dylibs
-cp rust/weekit/target/debug/examples/${NAME_LOWER} ${APP}/Contents/MacOS/${NAME_UPPER}
+cp target/debug/examples/${NAME_LOWER} ${APP}/Contents/MacOS/${NAME_UPPER}
 install_name_tool -add_rpath "@executable_path/../dylibs" ${APP}/Contents/MacOS/${NAME_UPPER}

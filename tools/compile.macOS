@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SDK=../../third-party/amanithvg-sdk
+SDK=third-party/amanithvg-sdk
 
 echo $0 $@
 

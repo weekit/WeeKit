@@ -16,5 +16,5 @@ image:
 	tools/build.macOS image
 
 clean:
-	cd rust/weekit; cargo clean
+	cargo clean
 	rm -rf lib *.app
