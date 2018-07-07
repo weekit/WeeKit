@@ -1,39 +1,25 @@
+AMANITHVG = third-party/amanithvg-sdk
 
-
-$(OUT_DIR)/libplatform.a: $(OUT_DIR)/platform.o $(OUT_DIR)/image.o $(OUT_DIR)/term.o
-	ls $(OUT_DIR)
-	ar crus $(OUT_DIR)/libplatform.a $(OUT_DIR)/platform.o $(OUT_DIR)/image.o $(OUT_DIR)/term.o
-
-SDK=third-party/amanithvg-sdk
-
-
-$(OUT_DIR)/platform.o:	platform/macOS/platform.m
-	clang platform/macOS/platform.m \
-	-c \
+CFLAGS = -c \
        	-g \
        	-I platform/macOS \
-       	-I ${SDK}/include \
+       	-I ${AMANITHVG}/include \
        	-I /usr/local/include \
-       	-I src \
-	-o $(OUT_DIR)/platform.o
+       	-I src 
 
-$(OUT_DIR)/image.o:	platform/common/image.c
-	clang platform/common/image.c \
-		-c \
-		-g \
-       		-I platform/macOS \
-       		-I ${SDK}/include \
-       		-I /usr/local/include \
-       		-I src \
-		-o $(OUT_DIR)/image.o
+_OBJ = platform.o image.o term.o
+OBJ = $(patsubst %,$(OUT_DIR)/%,$(_OBJ))
 
+LIB = $(OUT_DIR)/libplatform.a
 
-$(OUT_DIR)/term.o:	platform/common/term.c
-	clang platform/common/term.c \
-		-c \
-		-g \
-       		-I platform/macOS \
-       		-I ${SDK}/include \
-       		-I /usr/local/include \
-       		-I src \
-		-o $(OUT_DIR)/term.o
+$(LIB): $(OBJ)
+	ar crus $(LIB) $(OBJ)
+
+$(OUT_DIR)/%.o:	platform/macOS/%.m
+	clang $< $(CFLAGS) -o $@
+
+$(OUT_DIR)/%.o:	platform/common/%.c
+	clang $< $(CFLAGS) -o $@
+
+clean:
+	rm -f $(OBJ) $(LIB)
