@@ -1,0 +1,47 @@
+
+
+$(OUT_DIR)/libplatform.a: $(OUT_DIR)/input.o $(OUT_DIR)/egl.o $(OUT_DIR)/image.o $(OUT_DIR)/term.o
+	ls $(OUT_DIR)
+	ar crus $(OUT_DIR)/libplatform.a $(OUT_DIR)/input.o $(OUT_DIR)/egl.o $(OUT_DIR)/image.o $(OUT_DIR)/term.o
+
+
+$(OUT_DIR)/input.o:	platform/pi/input.c
+	clang platform/pi/input.c \
+		-c \
+		-g \
+		-I /opt/vc/include \
+		-I /usr/local/include \
+		-L /usr/local/lib \
+		-I src \
+		-o $(OUT_DIR)/input.o
+
+$(OUT_DIR)/egl.o:	platform/pi/egl.c
+	clang platform/pi/egl.c \
+		-c \
+		-g \
+		-I /opt/vc/include \
+		-I /usr/local/include \
+		-L /usr/local/lib \
+		-I src \
+		-o $(OUT_DIR)/egl.o
+
+$(OUT_DIR)/image.o:	platform/common/image.c
+	clang platform/common/image.c \
+		-c \
+		-g \
+		-I /opt/vc/include \
+		-I /usr/local/include \
+		-L /usr/local/lib \
+		-I src \
+		-o $(OUT_DIR)/image.o
+
+
+$(OUT_DIR)/term.o:	platform/common/term.c
+	clang platform/common/term.c \
+		-c \
+		-g \
+		-I /opt/vc/include \
+		-I /usr/local/include \
+		-L /usr/local/lib \
+		-I src \
+		-o $(OUT_DIR)/term.o

@@ -1,26 +1,6 @@
 all:	app
 
-libs:	lib/libplatform.so
-
-lib/libplatform.so:	platform/pi/egl.c platform/pi/input.c platform/common/image.c platform/common/term.c
-	mkdir -p lib
-	clang \
-		platform/pi/egl.c \
-		platform/pi/input.c \
-		platform/common/image.c \
-		platform/common/term.c \
-		-g \
-		-I /opt/vc/include \
-		-I /usr/local/include \
-		-L /usr/local/lib \
-		-I src \
-		-lobjc \
-		-shared -fpic \
-		-ljpeg \
-		-o lib/libplatform.so
-	sudo cp lib/libplatform.so /usr/lib
-
-app:	libs
+app:
 	cd rust/weekit; cargo build --example image
 
 clean:
