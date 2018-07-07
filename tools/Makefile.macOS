@@ -1,0 +1,39 @@
+
+
+$(OUT_DIR)/libplatform.a: $(OUT_DIR)/platform.o $(OUT_DIR)/image.o $(OUT_DIR)/term.o
+	ls $(OUT_DIR)
+	ar crus $(OUT_DIR)/libplatform.a $(OUT_DIR)/platform.o $(OUT_DIR)/image.o $(OUT_DIR)/term.o
+
+SDK=third-party/amanithvg-sdk
+
+
+$(OUT_DIR)/platform.o:	platform/macOS/platform.m
+	clang platform/macOS/platform.m \
+	-c \
+       	-g \
+       	-I platform/macOS \
+       	-I ${SDK}/include \
+       	-I /usr/local/include \
+       	-I src \
+	-o $(OUT_DIR)/platform.o
+
+$(OUT_DIR)/image.o:	platform/common/image.c
+	clang platform/common/image.c \
+		-c \
+		-g \
+       		-I platform/macOS \
+       		-I ${SDK}/include \
+       		-I /usr/local/include \
+       		-I src \
+		-o $(OUT_DIR)/image.o
+
+
+$(OUT_DIR)/term.o:	platform/common/term.c
+	clang platform/common/term.c \
+		-c \
+		-g \
+       		-I platform/macOS \
+       		-I ${SDK}/include \
+       		-I /usr/local/include \
+       		-I src \
+		-o $(OUT_DIR)/term.o

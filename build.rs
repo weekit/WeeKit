@@ -8,19 +8,10 @@ fn main() {
 
     if target.contains("apple") {
         let out_dir = env::var("OUT_DIR").unwrap();
-        Command::new("tools/compile.macOS")
-            .arg(&"platform/macOS/platform.m")
-            .arg(&format!("{}/platform.o", out_dir))
-            .status()
-            .unwrap();
-        Command::new("tools/compile.macOS")
-            .arg(&"platform/common/image.c")
-            .arg(&format!("{}/image.o", out_dir))
-            .status()
-            .unwrap();
-        Command::new("ar")
-            .args(&["crus", "libplatform.a", "platform.o", "image.o"])
-            .current_dir(&Path::new(&out_dir))
+        println!("OUT_DIR = {}", out_dir);
+        Command::new("make")
+            .arg(&"-f")
+            .arg(&"tools/Makefile.macOS")
             .status()
             .unwrap();
         println!("cargo:rustc-link-search=native={}", out_dir);
