@@ -26,12 +26,22 @@ The easiest way to get Rust is to install it with [rustup](https://rustup.rs).
 
 ## Dependencies
 
-On Raspberry Pi, WeeKit requires `clang` and `libjpeg-dev`. Install them with
-the following:
+On Raspberry Pi, WeeKit is developed with Raspbian Stretch Lite. 
+We install it with NOOBS.
 
-```
-% sudo apt-get install clang libjpeg-dev -y
-```
+On Raspberry Pi, WeeKit requires `clang` and `libjpeg-dev`. 
+Install them with the following:
+
+`% sudo apt-get install clang libjpeg-dev -y`
+
+You may also need to install `git` and `libssl_dev`.
+
+`% sudo apt-get install git libssl_dev -y`
+
+We use `rustup` to install Rust.
+
+`curl https://sh.rustup.rs -sSf | sh
+source ~/.profile # sets path in the current shell`
 
 ## Hardware Configuration
 
