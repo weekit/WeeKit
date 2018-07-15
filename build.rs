@@ -16,8 +16,11 @@ use std::env;
 use std::process::Command;
 
 fn main() {
+    println!("running build.rs");
     let target = env::var("TARGET").unwrap();
     println!("target {}", target);
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
+    println!("target_os {}", target_os);
 
     if target.contains("apple") {
         let out_dir = env::var("OUT_DIR").unwrap();
@@ -47,13 +50,14 @@ fn main() {
             .status()
             .unwrap();
         println!("cargo:rustc-link-search=native={}", out_dir);
-        println!("cargo:rustc-link-search=native=/opt/vc/lib");
         println!("cargo:rustc-link-lib=platform");
-        println!("cargo:rustc-link-lib=jpeg");
-        println!("cargo:rustc-link-lib=brcmOpenVG");
-        println!("cargo:rustc-link-lib=brcmEGL");
-        println!("cargo:rustc-link-lib=bcm_host");
+        println!("cargo:rustc-link-search=native=/opt/vc/lib");
         println!("cargo:rustc-link-lib=vcos");
+        println!("cargo:rustc-link-lib=brcmEGL");
         println!("cargo:rustc-link-lib=brcmGLESv2");
+        println!("cargo:rustc-link-lib=bcm_host");
+        println!("cargo:rustc-link-lib=brcmOpenVG");
+        println!("cargo:rustc-link-lib=jpeg");
     }
+    println!("cargo:rerun-if-changed=build.rs");
 }

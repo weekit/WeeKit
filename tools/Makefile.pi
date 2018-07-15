@@ -25,13 +25,17 @@ OBJ = $(patsubst %,$(OUT_DIR)/%,$(_OBJ))
 LIB = $(OUT_DIR)/libplatform.a
 
 $(LIB): $(OBJ)
+	echo "building $(LIB)"
 	ar crus $(LIB) $(OBJ)
 
 $(OUT_DIR)/%.o:	platform/pi/%.c
+	echo "compiling $<"
 	clang $< $(CFLAGS) -o $@
 
 $(OUT_DIR)/%.o:	platform/common/%.c
+	echo "compiling $<"
 	clang $< $(CFLAGS) -o $@
 
 clean:
+	echo "make clean"
 	rm -f $(LIB) $(OBJ)

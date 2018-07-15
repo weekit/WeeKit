@@ -15,7 +15,7 @@
 all:	app
 
 app:
-	cargo build --example image
+	cargo build --example image -vv
 
 clean:
 	cargo clean
