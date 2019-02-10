@@ -17,6 +17,7 @@ extern crate weekit;
 
 use weekit::*;
 
+use std::collections::HashMap;
 use rand::Rng;
 
 const S: usize = 10;
@@ -27,6 +28,7 @@ struct Life {
     grid: [[[bool; H]; W]; 2],
     page: usize,
     paused: bool,
+    history: HashMap<u64, i8>,
 }
 
 impl Life {
@@ -35,9 +37,22 @@ impl Life {
             grid: [[[false; H]; W]; 2],
             page: 0,
             paused: false,
+            history: HashMap::new(),
         };
         life.reset();
         life
+    }
+
+    fn signature(&self) -> u64 {
+        let mut s : u64 = 0;
+        for j in 0..H {
+            for i in 0..W {
+                if self.grid[self.page][i][j] {
+                    s ^= 1 << ((j * W + i) % 64)
+                }
+            }
+        }
+        s
     }
 
     fn reset(&mut self) {
@@ -50,6 +65,7 @@ impl Life {
             }
         }
         self.page = 0;
+        self.history.clear();
     }
 
     fn update(&mut self) -> () {
@@ -113,8 +129,19 @@ impl Life {
         }
     }
 
+    fn needs_reset(&mut self) -> bool {
+        let s = self.signature();
+        let c = self.history.entry(s).or_insert(0);
+        *c += 1;
+        println!("{:016X} {}", s, *c);
+        *c >= 64
+    }
+
     fn handle_tick(&mut self) -> () {
         self.update();
+        if self.needs_reset() {
+            self.reset();
+        }
     }
 }
 
