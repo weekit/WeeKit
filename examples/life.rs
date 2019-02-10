@@ -133,7 +133,7 @@ impl Life {
         let s = self.signature();
         let c = self.history.entry(s).or_insert(0);
         *c += 1;
-        println!("{:016X} {}", s, *c);
+        //println!("{:016X} {}", s, *c);
         *c >= 64
     }
 
