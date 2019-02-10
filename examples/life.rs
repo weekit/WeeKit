@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+
+
 extern crate rand;
 extern crate weekit;
+extern crate chrono;
 
 use weekit::*;
 
+use chrono::Local;
 use std::collections::HashMap;
 use rand::Rng;
 
@@ -24,23 +29,35 @@ const S: usize = 10;
 const W: usize = 5 * S;
 const H: usize = 3 * S;
 
-struct Life {
+struct Life<'a> {
     grid: [[[bool; H]; W]; 2],
     page: usize,
     paused: bool,
     history: HashMap<u64, i8>,
+    serif_typeface: Option<font::Font<'a>>,
+    sans_typeface: Option<font::Font<'a>>,
+    sans_mono_typeface: Option<font::Font<'a>>,
 }
 
-impl Life {
-    fn new() -> Life {
+impl<'a> Life<'a> {
+    fn new() -> Life<'a> {
         let mut life = Life {
             grid: [[[false; H]; W]; 2],
             page: 0,
             paused: false,
             history: HashMap::new(),
+            serif_typeface: None,
+            sans_typeface: None,
+            sans_mono_typeface: None,
         };
         life.reset();
         life
+    }
+
+    fn load_fonts(&mut self) -> () {
+        self.serif_typeface = Some(font::Font::serif());
+        self.sans_typeface = Some(font::Font::sans());
+        self.sans_mono_typeface = Some(font::Font::sans_mono());
     }
 
     fn signature(&self) -> u64 {
@@ -145,8 +162,12 @@ impl Life {
     }
 }
 
-impl Application for Life {
+impl<'a> Application for Life<'a> {
     fn draw(&mut self, width: u32, height: u32) -> () {
+        match self.serif_typeface {
+            Some(_) => (),
+            None => self.load_fonts(),
+        }
         let canvas = draw::Canvas::new(width, height);
         canvas.background(64, 0, 0);
 
@@ -157,11 +178,11 @@ impl Application for Life {
         let y0 = 0.5 * (height as f32 - ch * H as f32);
 
         // draw the square
-        draw::fill(8, 8, 8, 1.0);
+        draw::fill(0, 0, 0, 1.0);
         draw::rect(x0, y0, cw * W as f32, ch * H as f32);
 
         // draw a grid of inset squares
-        draw::fill(255, 255, 128, 1.0);
+        draw::fill(32, 0, 0, 1.0);
 
         let inset = cw * 0.1;
         for j in 0..H {
@@ -172,6 +193,31 @@ impl Application for Life {
                     draw::rect(xi + inset, yj + inset, cw - inset * 2.0, ch - inset * 2.0);
                 }
             }
+        }
+
+        draw::fill(255, 255, 0, 0.2); // text color
+        let date = Local::now();
+        let str_0 = date.format("%H:%M").to_string();
+        let str_1 = date.format("%Y-%m-%d").to_string();
+        match self.sans_typeface {
+            Some(ref font) => draw::text_mid(
+                width as f32 / 2.0,
+                height as f32 * 0.4,
+                &str_0,
+                font,
+                width / 5,
+            ),
+            None => {}
+        }
+        match self.sans_typeface {
+            Some(ref font) => draw::text_mid(
+                width as f32 / 2.0,
+                height as f32 * 0.05,
+                &str_1,
+                font,
+                width / 20,
+            ),
+            None => {}
         }
     }
 
